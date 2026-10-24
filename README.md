@@ -10,20 +10,26 @@ externas (el generador de QR está embebido).
 
 ## 1. Publicarlo en GitHub Pages
 
+**Ya está publicado:** <https://seckbeth.github.io/torneos/>
+(repo: <https://github.com/Seckbeth/torneos>)
+
+GitHub Pages publica desde la rama `gh-pages`, que es una copia de `main`. Para actualizar:
+
+```powershell
+.\deploy.ps1                    # usa el mensaje "actualizacion"
+.\deploy.ps1 "nuevo overlay"    # o uno propio
+```
+
+El script commitea, sube `main` y sincroniza `gh-pages` (que es la que sirve el sitio).
+Los cambios tardan ~30 segundos en verse; si no aparecen, recargá con Ctrl+F5.
+
+Desde cero, en otra cuenta:
+
 1. Creá un repositorio **público**, por ejemplo `mi-torneo`.
 2. Subí `index.html` a la raíz (arrastrándolo en la web de GitHub alcanza).
-3. **Settings → Pages → Source: Deploy from a branch → main / (root) → Save.**
+3. Creá la rama `gh-pages` con el mismo contenido (o usá
+   **Settings → Pages → Deploy from a branch → main / (root) → Save**).
 4. En un minuto queda en `https://TU-USUARIO.github.io/mi-torneo/`.
-
-Con Git instalado, los mismos pasos por consola:
-
-```bash
-git init -b main
-git add index.html README.md
-git commit -m "Gestor de torneos"
-git remote add origin https://github.com/TU-USUARIO/mi-torneo.git
-git push -u origin main
-```
 
 También funciona en Netlify, Cloudflare Pages, Vercel o abriéndolo desde un pendrive:
 es un archivo estático.
