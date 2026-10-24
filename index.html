@@ -2463,12 +2463,19 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const log2 = (n) => Math.round(Math.log(n) / Math.LN2);
 
 /* ---------------- store ---------------- */
+/* Nube por defecto: si está cargada, cualquier dispositivo que abra el link
+   usa esta base sin tener que configurar nada. Vacía = modo local. */
+const DEFAULT_CFG = { url: "https://vrrqrunsgphlkmrxtbcl.supabase.co", key: "sb_publishable_hc9VxTIQNmZXHkfHMypQKA_acWldIS7" };
+
 let S = loadDB();
 function loadDB() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY) || "{}");
-    return { t: d.t || {}, owners: d.owners || {}, cfg: d.cfg || { url: "", key: "" }, ui: {} };
-  } catch (e) { return { t: {}, owners: {}, cfg: { url: "", key: "" }, ui: {} }; }
+    const cfg = Object.assign({}, DEFAULT_CFG, d.cfg || {});
+    if (!cfg.url) cfg.url = DEFAULT_CFG.url;   // sin configurar = usa la nube incluida
+    if (!cfg.key) cfg.key = DEFAULT_CFG.key;
+    return { t: d.t || {}, owners: d.owners || {}, cfg, ui: {} };
+  } catch (e) { return { t: {}, owners: {}, cfg: Object.assign({}, DEFAULT_CFG), ui: {} }; }
 }
 function saveDB() {
   localStorage.setItem(KEY, JSON.stringify({ t: S.t, owners: S.owners, cfg: S.cfg }));
@@ -2860,7 +2867,12 @@ function render() {
   if (r.name === "overlay") { renderOverlay(r.t); return; }
   if (r.name === "home") return renderHome();
   if (r.name === "settings") return renderSettings();
-  if (r.name === "missing") { $("#app").innerHTML = `<div class="card">Torneo no encontrado. <a href="#/">Volver</a></div>`; return; }
+  if (r.name === "missing") {
+    $("#app").innerHTML = `<div class="card">Torneo no encontrado. <a href="#/">Volver</a>
+      <div class="tiny muted" style="margin-top:.4rem">Si te pasaron este link recién, esperá un segundo: se está conectando con la nube…</div></div>`;
+    pullRemote(false);
+    return;
+  }
   if (r.name === "test") return renderTest();
   if (r.name === "reg") return renderReg(r.t);
   if (r.name === "watch") return renderWatch(r.t);
@@ -3461,7 +3473,17 @@ document.addEventListener("click", (e) => {
   if (act === "demo") { createDemo(); return; }
   if (act === "del") {
     if (!confirm("¿Borrar el torneo y todos sus datos?")) return;
-    delete S.t[el.dataset.id]; delete S.owners[el.dataset.id]; saveDB(); render(); return;
+    const id = el.dataset.id;
+    delete S.t[id]; delete S.owners[id]; saveDB();
+    // marca de borrado en la nube para que no vuelva al sincronizar
+    if (cfgOK()) {
+      fetch(S.cfg.url + "/rest/v1/tournaments?on_conflict=id", {
+        method: "POST",
+        headers: Object.assign(headers(), { Prefer: "resolution=merge-duplicates,return=minimal" }),
+        body: JSON.stringify([{ id, data: { id, deleted: true, updatedAt: now() }, updated_at: new Date().toISOString() }]),
+      }).catch(() => {});
+    }
+    render(); return;
   }
   if (!t) return;
 
@@ -3587,6 +3609,7 @@ document.addEventListener("submit", (e) => {
       size: d.get("size"), bestOf: d.get("bestOf"), chars: d.get("chars"),
       pools: d.get("pools"), advance: d.get("advance"),
     });
+    touch(t);
     go("#/t/" + t.id);
     return;
   }
@@ -3822,6 +3845,10 @@ async function pullRemote(manual) {
       const remote = row.data;
       const local = S.t[row.id];
       if (!remote || !remote.id) continue;
+      if (remote.deleted) {
+        if (local) { delete S.t[row.id]; delete S.owners[row.id]; changed = true; }
+        continue;
+      }
       if (!local || (remote.updatedAt || 0) > (local.updatedAt || 0)) { S.t[row.id] = remote; changed = true; }
     }
     if (changed) { saveDB(); render(); }
