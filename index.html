@@ -2548,6 +2548,61 @@ function newTournament(o) {
 }
 function isAdmin(t) { return !!S.owners[t.id]; }
 
+/* ---------------- torneo de ejemplo (para mirar cómo funciona) ---------------- */
+function createDemo() {
+  const t = newTournament({
+    name: "Torneo de ejemplo (11 jugadores)",
+    game: "Street Fighter 6",
+    format: "double",
+    size: "auto",
+    bestOf: 3,
+    pools: 4,
+    advance: 2,
+    chars: "Ryu, Ken, Chun-Li, Cammy, Guile, Juri, Zangief, Dhalsim",
+  });
+  const people = [
+    ["Kaz", "Ryu"], ["RyuMaster", "Ken"], ["ChunLi_88", "Chun-Li"], ["Blanka_Boy", "Blanka"],
+    ["Guile_Win", "Guile"], ["Dhalsim_Long", "Dhalsim"], ["Zangief_01", "Zangief"],
+    ["Juri_Sting", "Juri"], ["Cammy_Kick", "Cammy"], ["Ken_Masters", "Ken"], ["Sagat_King", "Sagat"],
+  ];
+  people.forEach(([name, char], i) => {
+    t.players.push({ id: uid("p"), name, char, seed: i + 1, in: true, createdAt: now() + i });
+  });
+
+  const pick = (a, b) => {
+    // gana el mejor sembrado, con alguna sorpresa para que la tabla no sea obvia
+    const better = (a.seed || 99) <= (b.seed || 99) ? "a" : "b";
+    const upset = Math.random() < .22;
+    const win = upset ? (better === "a" ? "b" : "a") : better;
+    const close = Math.random() < .45;
+    return win === "a" ? [2, close ? 1 : 0] : [close ? 1 : 0, 2];
+  };
+
+  buildPools(t);
+  t.pools.groups.forEach(g => g.matches.forEach(m => {
+    t.poolResults[m.id] = pick(t.players.find(p => p.id === m.a), t.players.find(p => p.id === m.b));
+  }));
+  closePools(t);
+
+  let guard = 0;
+  for (;;) {
+    const out = computeBracket(t);
+    if (out.champ || guard++ > 300) break;
+    const pend = playable(out.B);
+    if (!pend.length) break;
+    pend.forEach(m => {
+      t.results[m.id] = pick(t.players.find(p => p.id === m.a), t.players.find(p => p.id === m.b));
+    });
+  }
+  settle(t);
+  touch(t);
+  S.ui.tab = "bracket";
+  saveDB();
+  go("#/t/" + t.id);
+  render();
+  toast("Torneo de ejemplo cargado: pools + bracket terminado");
+}
+
 /* ============================================================
    MOTOR DE BRACKETS
    ============================================================ */
@@ -2841,7 +2896,8 @@ function renderHome() {
       </div>
       <div class="field"><span class="tiny muted">Personajes (separados por coma) — opcional</span>
         <input name="chars" placeholder="Ryu, Ken, Chun-Li, Cammy, Guile, Juri"></div>
-      <div class="row"><button class="btn p" type="submit">Crear torneo</button></div>
+      <div class="row"><button class="btn p" type="submit">Crear torneo</button>
+        <button class="btn g" type="button" data-act="demo">Ver torneo de ejemplo</button></div>
     </form>
 
     ${list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
@@ -2861,7 +2917,7 @@ function renderHome() {
             <button class="btn sm g danger" data-act="del" data-id="${t.id}">Borrar</button>
           </div>
         </div>`;
-      }).join("")}</div>` : `<div class="card muted tiny">Todavía no hay torneos. Creá el primero arriba.</div>`}
+      }).join("")}</div>` : `<div class="card muted tiny">Todavía no hay torneos. Creá el primero arriba o tocá <b>Ver torneo de ejemplo</b> para mirar uno terminado.</div>`}
   </div>`;
 }
 
@@ -3402,6 +3458,7 @@ document.addEventListener("click", (e) => {
     return;
   }
   if (act === "sync-now") { pullRemote(true); return; }
+  if (act === "demo") { createDemo(); return; }
   if (act === "del") {
     if (!confirm("¿Borrar el torneo y todos sus datos?")) return;
     delete S.t[el.dataset.id]; delete S.owners[el.dataset.id]; saveDB(); render(); return;
