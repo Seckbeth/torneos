@@ -2914,12 +2914,12 @@ function renderHome() {
 
     ${list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
       ${list.map(t => {
-        const n = t.players.filter(p => p.in !== false).length;
+        const n = t.players.length;
         const st = t.phase === "running" ? "En curso" : t.phase === "done" ? "Finalizado" : "Inscripción";
         return `<div class="card" style="display:flex;flex-direction:column;gap:.5rem">
           <div class="row" style="justify-content:space-between">
             <span class="badge ${t.phase === "running" ? "live" : ""}">${st}</span>
-            <span class="tiny muted num">${n} jugadores</span>
+            <span class="tiny muted num">${n} ${n === 1 ? "inscripto" : "inscriptos"}</span>
           </div>
           <div style="font-weight:800;font-size:1.05rem">${esc(t.name)}</div>
           <div class="tiny muted">${esc(t.game || "—")} · ${t.format === "double" ? "Doble eliminación" : "Eliminación directa"} · ${t.phase === "reg" ? (t.cap ? "Cupo " + t.cap : "Sin cupo") : "Bracket de " + t.size}</div>

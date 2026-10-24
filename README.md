@@ -108,13 +108,20 @@ pendiente.
 
 ---
 
-## 4. Sincronización entre dispositivos (opcional)
+## 4. Sincronización entre dispositivos (ya configurada)
 
-Sin configurar nada, la app es **local**: un solo navegador. Sirve para organizar desde la
-laptop del TO y proyectar el bracket, pero el celular de un juez o el OBS no ven los cambios.
+La copia publicada **ya viene conectada** a una base Supabase gratuita de este proyecto
+(proyecto `vrrqrunsgphlkmrxtbcl`): la URL y la clave pública están dentro de `index.html`.
+Eso significa que el celular de un jugador, la tablet de un juez y el OBS comparten el
+mismo torneo sin configurar nada: abren el link y listo.
 
-Para que varios dispositivos compartan el mismo torneo, creá un proyecto gratis en
-[Supabase](https://supabase.com), corré este SQL en el editor y pegá URL + anon key en **⚙︎ Ajustes**:
+Los datos se empujan al guardar y todos los clientes consultan cada ~4 segundos
+(incluido el overlay). Es *last write wins*: si dos personas editan lo mismo a la vez,
+gana el último guardado.
+
+Para usar **tu propia** base (o si querés cambiar de proyecto):
+
+1. Creá un proyecto en [Supabase](https://supabase.com) y corré este SQL en el *SQL Editor*:
 
 ```sql
 create table if not exists tournaments (
@@ -128,14 +135,16 @@ create policy "public write" on tournaments for insert with check (true);
 create policy "public update" on tournaments for update using (true);
 ```
 
-El panel empuja los cambios y todos los clientes consultan cada ~3 segundos (incluido el
-overlay). Es *last write wins*: si dos personas editan el mismo torneo al mismo tiempo,
-gana el último guardado.
+2. Copiá **Project URL** y la clave **anon / public** desde *Settings → API*.
+3. Pegalas en **⚙︎ Ajustes** (queda guardado en ese navegador).
+   Para que *todos* los dispositivos las usen sin configurar nada, cambialas en
+   `index.html` → `const DEFAULT_CFG = { url: "...", key: "..." }` y volvé a publicar.
 
 > Seguridad: las políticas de arriba son públicas a propósito, para que un celular pueda
-> inscribirse sin cuenta. Cualquiera con la URL y la anon key puede leer/escribir. Para
-> torneos con premio real, conviene cerrar el registro y mover la escritura a una función
-> con PIN.
+> inscribirse sin cuenta. Cualquiera con la URL y la clave pública puede leer/escribir.
+> La clave `anon`/`publishable` está pensada para ir en el navegador; no uses la
+> `service_role` acá. Para torneos con premio real, conviene cerrar el registro y mover
+> la escritura a una función con PIN.
 
 ---
 
