@@ -2492,6 +2492,7 @@ let pushTimer = null;
 function touch(t) {
   t.updatedAt = now();
   saveDB();
+  if (t.demo) return; /* los ejemplos no se suben a la nube compartida */
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => pushRemote(t), 900);
 }
@@ -2582,6 +2583,7 @@ function createDemo() {
     advance: 2,
     chars: "Ryu, Ken, Chun-Li, Cammy, Guile, Juri, Zangief, Dhalsim",
   });
+  t.demo = true;
   const people = [
     ["Kaz", "Ryu"], ["RyuMaster", "Ken"], ["ChunLi_88", "Chun-Li"], ["Blanka_Boy", "Blanka"],
     ["Guile_Win", "Guile"], ["Dhalsim_Long", "Dhalsim"], ["Zangief_01", "Zangief"],
@@ -2623,6 +2625,36 @@ function createDemo() {
   go("#/t/" + t.id);
   render();
   toast("Torneo de ejemplo cargado: pools + bracket terminado");
+}
+
+function createDemoHeat() {
+  const t = newTournament({
+    name: "Ejemplo por puestos (12 jugadores)",
+    game: "Mario Kart 8 Deluxe",
+    mode: "heat",
+    perMatch: 4,
+    advW: 2,
+    advL: 1,
+    format: "double",
+    bestOf: 3,
+    size: "auto",
+  });
+  t.demo = true;
+  ["Ana", "Beto", "Cami", "Dani", "Eze", "Flor", "Gabi", "Hugo", "Iván", "Juli", "Kari", "Lucho"]
+    .forEach((name, i) => t.players.push({ id: uid("p"), name, seed: i + 1, in: true, createdAt: now() + i }));
+  t.phase = "running";
+  // dos partidas de la primera ronda jugadas; la tercera queda pendiente para probar
+  const H = computeHeat(t);
+  (H.W[0] ? H.W[0].matches : []).slice(0, 2).forEach((m, i) => {
+    t.orders[m.id] = m.players.slice(i + 1).concat(m.players.slice(0, i + 1));
+  });
+  settle(t);
+  touch(t);
+  S.ui.tab = "bracket";
+  saveDB();
+  go("#/t/" + t.id);
+  render();
+  toast("Ejemplo por puestos: 4 por partida, 2 pasan y el 3.º baja");
 }
 
 /* ============================================================
@@ -3144,7 +3176,8 @@ function renderHome() {
       <div class="field"><span class="tiny muted">Personajes (separados por coma) — opcional</span>
         <input name="chars" placeholder="Ryu, Ken, Chun-Li, Cammy, Guile, Juri"></div>
       <div class="row"><button class="btn p" type="submit">Crear torneo</button>
-        <button class="btn g" type="button" data-act="demo">Ver torneo de ejemplo</button></div>
+        <button class="btn g" type="button" data-act="demo">Ver torneo de ejemplo</button>
+        <button class="btn g" type="button" data-act="demoheat">Ejemplo por puestos</button></div>
     </form>
 
     ${list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
@@ -3950,6 +3983,7 @@ document.addEventListener("click", (e) => {
   }
   if (act === "sync-now") { pullRemote(true); return; }
   if (act === "demo") { createDemo(); return; }
+  if (act === "demoheat") { createDemoHeat(); return; }
   if (act === "del") {
     if (!confirm("¿Borrar el torneo y todos sus datos?")) return;
     const id = el.dataset.id;

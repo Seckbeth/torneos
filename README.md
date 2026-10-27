@@ -120,6 +120,8 @@ Pensado para juegos donde juegan 3–4 (o más) a la vez y no hay "ganador 1v1":
 - El cuadro de perdedores se arma cuando termina el de ganadores; al final hay una
   **gran final** entre el campeón de ganadores y el de perdedores.
 - El bracket muestra el puesto de cada uno y marca **pasa** a los que avanzan.
+- En la home, **Ejemplo por puestos** crea uno de 12 jugadores con dos partidas ya
+  cargadas (y una pendiente para probar cómo se reporta el orden de llegada).
 
 **Corregir sobre la marcha**
 
