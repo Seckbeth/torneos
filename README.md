@@ -43,22 +43,37 @@ es un archivo estático.
 
 | Paso | Quién | Qué pasa |
 |---|---|---|
-| Crear torneo | Admin | Nombre, juego, formato (doble/simple), BO3/BO5, cupo y personajes. |
-| Inscripción | Jugador | Escanea el QR, pone nombre y personaje. Ve el contador en vivo. |
-| Check-in | Admin/Juez | Marca quién llegó. Los que no están quedan afuera de las llaves. |
+| Crear torneo | Admin | Nombre, juego, modalidad, formato (doble/simple), BO3/BO5, cupo, jueces y personajes. |
+| Inscripción | Jugador | Escanea el QR, pone nombre y personaje. Ve el contador en vivo y queda identificado en ese celular. |
+| Check-in | Admin | Marca quién llegó. Los que no están quedan afuera de las llaves. |
 | Seeding | Admin | Número de seed manual, siembra automática o aleatoria. |
 | Pools | Admin | Si el torneo tiene fase de grupos: *Sortear grupos*, reportar las partidas y *Cerrar grupos y armar bracket*. |
 | Iniciar | Admin | El sistema arma el bracket (siempre potencia de 2, con pases directos). |
 | Reportar | Admin/Juez | Un click en el ganador o marcador exacto. Se actualiza al instante. |
 | Stream | Admin/Juez | Marca una partida "al stream" y el overlay la muestra. |
+| En vivo | Jugador | Ve su situación (avanza, espera rival, baja a perdedores, eliminado o campeón), el bracket y su trayectoria. |
 
 **Roles y PIN**
 
 - El creador queda como admin en ese navegador automáticamente.
+- **Solo admin y jueces cargan, editan o borran resultados.** El participante y el público
+  solo miran: no tienen botones de reporte.
 - En **Jueces** está el PIN de admin (para entrar desde otro dispositivo) y se crean
-  jueces con su propio PIN.
-- El juez solo ve Resumen, Jugadores (check-in) y Bracket. No puede borrar resultados,
-  reiniciar llaves ni tocar la siembra.
+  jueces con su propio PIN, escribiendo el nombre o eligiendo un inscripto.
+- El juez entra por el link del torneo → *Soy organizador o juez* → su PIN. Puede reportar
+  y borrar resultados, marcar el stream y ver pools, pero no editar el torneo, tocar la
+  siembra, el check-in ni reiniciar llaves.
+- Los jugadores **no** necesitan PIN ni cuenta: el link normal (`#/t/ID`) ya les muestra
+  el torneo en vivo.
+
+**Vista del jugador (celular)**
+
+- Al inscribirse, el celular recuerda quién es (`localStorage`), así que al volver al link
+  ve *Tu situación* sin loguearse.
+- La tarjeta dice si sigue en carrera, a quién enfrenta, si bajó a perdedores, si quedó
+  eliminado o si es campeón. **Mi trayectoria** lista todas sus partidas con marcador.
+- Funciona igual si cierra el navegador: al reabrir el link se recalcula desde los
+  resultados guardados.
 
 **Formato de llaves**
 
@@ -85,9 +100,36 @@ es un archivo estático.
 
 **Editar el torneo**
 
-Arriba del resumen está **Editar**: cambia nombre del evento, juego y BO3/BO5 en
-cualquier momento, incluso con el torneo en curso. Los links, el QR y las llaves no
-se tocan.
+Arriba del resumen está **Editar**: cambia nombre del evento, juego, modalidad, formato
+(simple/doble) y BO3/BO5 en cualquier momento, incluso con el torneo en curso. Los links,
+el QR y las llaves no se tocan. Si cambiás el formato o la modalidad con partidas jugadas,
+la app avisa y rearma las llaves desde cero.
+
+**Modo por puestos (Mario Kart, Smash, party games)**
+
+Pensado para juegos donde juegan 3–4 (o más) a la vez y no hay "ganador 1v1":
+
+- Al crear el torneo elegís **Modalidad → Por puestos**, cuántos juegan por partida
+  (2 a 8), cuántos pasan a ganadores y cuántos bajan a perdedores.
+- Ejemplo típico: **4 por partida, pasan 2 a ganadores, el 3.º baja a perdedores y el
+  4.º queda eliminado**.
+- Cada partida se reporta **tocando a los jugadores en orden de llegada** (1.º, 2.º, 3.º…).
+  Con "ninguno" en perdedores queda como eliminación directa por puestos.
+- Los grupos se arman en serpiente por siembra, así los mejores no se cruzan en la
+  primera ronda.
+- El cuadro de perdedores se arma cuando termina el de ganadores; al final hay una
+  **gran final** entre el campeón de ganadores y el de perdedores.
+- El bracket muestra el puesto de cada uno y marca **pasa** a los que avanzan.
+
+**Corregir sobre la marcha**
+
+- **Borrar resultado**: en cualquier partida ya jugada (1v1 o por puestos) hay un botón
+  para borrarlo y volver atrás; el bracket se recalcula solo.
+- **Renombrar jugador**: ✎ en la pestaña Jugadores.
+- **Agregar o sacar jugadores** con el torneo empezado: después tocá **Rearmar llaves**
+  para reconstruir el cuadro con la lista actual (borra los resultados).
+- **Pools**: los resultados de grupos se pueden corregir siempre; si la llave ya estaba
+  armada, *Volver a armar el bracket* recalcula los clasificados.
 
 ---
 
@@ -155,7 +197,8 @@ create policy "public update" on tournaments for update using (true);
   (reparte sin repetir hasta agotar la lista).
 - **Auto-test del motor**: abrí `#/test` para correr simulaciones de brackets de 4 a 64
   jugadores, con y sin pases directos, verificando campeón, cantidad de derrotas y reset
-  de la gran final.
+  de la gran final. También simula torneos **por puestos** (11, 16 y 20 jugadores, 3 a 6
+  por partida) y verifica que no haya campeón antes de la gran final.
 - **Cupo**: es solo informativo; el tamaño del bracket se calcula al iniciar según los
   jugadores con check-in.
 
@@ -166,6 +209,8 @@ create policy "public update" on tournaments for update using (true);
 - Sin Supabase: un solo navegador (las pestañas del mismo navegador sí se sincronizan).
 - Sin cuentas de usuario: el acceso es por PIN, no hay login real.
 - No hay historial de torneos por jugador ni ranking acumulado.
+- Agregar o sacar jugadores con el torneo en curso no reacomoda las llaves hasta tocar
+  **Rearmar llaves** (se pierden los resultados cargados).
 - El bracket se dibuja en columnas con scroll horizontal; no hay vista "full screen"
   autoajustable para 128 jugadores.
 

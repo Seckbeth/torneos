@@ -89,6 +89,14 @@
   .p.win .s{color:var(--ok)}
   .p.lose{opacity:.5}
   .p.bye .n{color:var(--dim);font-style:italic}
+  /* elegir orden en partidas de varios jugadores */
+  .pick{display:flex;align-items:center;gap:.6rem;background:#0f0d16;border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;font:inherit;color:inherit;cursor:pointer;text-align:left;width:100%}
+  .pick:hover{border-color:#3d3450;background:#151120}
+  .pick.on{border-color:var(--acc);background:rgba(255,46,136,.12)}
+  .pickn{width:1.5rem;height:1.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;background:#221c31;color:var(--dim);flex:0 0 auto}
+  .pick.on .pickn{background:var(--acc);color:#08120f}
+  .pickname{flex:1;font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .match.heat .p .s{width:1.2rem}
   .empty{color:var(--dim);font-size:.78rem;padding:.5rem}
   .modal{position:fixed;inset:0;background:rgba(4,3,8,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:100}
   .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.1rem;width:100%;max-width:460px;max-height:90vh;overflow:auto;box-shadow:0 30px 80px -30px #000}
@@ -2474,11 +2482,11 @@ function loadDB() {
     const cfg = Object.assign({}, DEFAULT_CFG, d.cfg || {});
     if (!cfg.url) cfg.url = DEFAULT_CFG.url;   // sin configurar = usa la nube incluida
     if (!cfg.key) cfg.key = DEFAULT_CFG.key;
-    return { t: d.t || {}, owners: d.owners || {}, cfg, ui: {} };
-  } catch (e) { return { t: {}, owners: {}, cfg: Object.assign({}, DEFAULT_CFG), ui: {} }; }
+    return { t: d.t || {}, owners: d.owners || {}, me: d.me || {}, cfg, ui: {} };
+  } catch (e) { return { t: {}, owners: {}, me: {}, cfg: Object.assign({}, DEFAULT_CFG), ui: {} }; }
 }
 function saveDB() {
-  localStorage.setItem(KEY, JSON.stringify({ t: S.t, owners: S.owners, cfg: S.cfg }));
+  localStorage.setItem(KEY, JSON.stringify({ t: S.t, owners: S.owners, me: S.me || {}, cfg: S.cfg }));
 }
 let pushTimer = null;
 function touch(t) {
@@ -2515,6 +2523,7 @@ function route() {
     if (!p[2]) return { name: "trn", t };
     if (p[2] === "reg") return { name: "reg", t };
     if (p[2] === "watch") return { name: "watch", t };
+    if (p[2] === "admin") return { name: "gate", t };
     if (p[2] === "overlay") return { name: "overlay", t };
   }
   return { name: "home" };
@@ -2529,18 +2538,24 @@ function newTournament(o) {
     name: o.name || "Torneo",
     game: o.game || "",
     format: o.format === "single" ? "single" : "double",
+    mode: o.mode === "heat" ? "heat" : "duel",
+    perMatch: clamp(+o.perMatch || 4, 2, 8),
+    advW: clamp(+o.advW || 2, 1, 7),
+    advL: clamp(o.advL == null ? 1 : +o.advL, 0, 6),
+    orders: {},
     size: 0,
     cap: o.size === "auto" ? 0 : +o.size || 0,
     autoSize: true,
     bestOf: +o.bestOf || 3,
     chars: (o.chars || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean),
-    poolCount: +o.pools || 0,
+    poolCount: o.mode === "heat" ? 0 : (+o.pools || 0),
     advance: +o.advance || 2,
     pools: null,
     poolResults: {},
     qualified: null,
     players: [],
-    judges: [],
+    judges: (o.judges || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean)
+      .map(name => ({ id: uid("j"), name, pin: String(Math.floor(1000 + Math.random() * 9000)) })),
     results: {},
     stream: null,
     phase: "reg",
@@ -2859,6 +2874,212 @@ function matchLabel(m) {
 }
 
 /* ============================================================
+   MODO FIESTA (varios jugadores por partida, por puestos)
+   Ej: Mario Kart 4 jugadores → pasan 2 a ganadores, 1 a perdedores.
+   ============================================================ */
+function heatChunks(ids, K) {
+  const n = ids.length;
+  if (!n) return [];
+  const groups = Math.max(1, Math.ceil(n / K));
+  const out = Array.from({ length: groups }, () => []);
+  ids.forEach((id, i) => {
+    const r = Math.floor(i / groups), pos = i % groups;
+    const gi = r % 2 === 0 ? pos : groups - 1 - pos;   // serpiente: los mejores repartidos
+    out[gi].push(id);
+  });
+  return out.filter(g => g.length);
+}
+
+function heatOrderOf(t, id, players) {
+  const o = (t.orders || {})[id];
+  if (!o || o.length !== players.length) return null;
+  if (!players.every(p => o.indexOf(p) >= 0)) return null;
+  return o.slice();
+}
+
+function computeHeat(t) {
+  const K = clamp(+t.perMatch || 4, 2, 8);
+  const aW = clamp(+t.advW || 2, 1, K - 1);
+  const dbl = t.format === "double";
+  const aL = dbl ? clamp(t.advL == null ? 1 : +t.advL, 0, K - 1) : 0;
+  const all = {}, W = [], L = [];
+  let champW = null, champL = null, gf = null, dropped = [];
+  let field = rosterOf(t).map(p => p.id);
+  if (field.length === 1) champW = field[0];
+
+  let guard = 0;
+  while (field.length > 1 && guard++ < 40) {
+    const groups = heatChunks(field, K);
+    const final = groups.length === 1;
+    const round = [], next = [];
+    groups.forEach((pl, i) => {
+      const id = "W" + W.length + "-" + i;
+      const ord = heatOrderOf(t, id, pl);
+      const m = {
+        id, side: "W", round: W.length, idx: i, final, players: pl.slice(),
+        order: ord, done: !!ord || pl.length === 1, advance: [],
+      };
+      if (pl.length === 1) m.order = pl.slice();
+      if (m.done) {
+        const advN = Math.min(aW, Math.max(1, pl.length - 1));
+        m.advance = final ? m.order.slice(0, 1) : m.order.slice(0, advN);
+        if (final) {
+          champW = m.order[0];
+          if (dbl) m.order.slice(1, 1 + aL).forEach(p => dropped.push(p));
+        } else {
+          m.advance.forEach(p => next.push(p));
+          if (dbl) m.order.slice(advN, advN + aL).forEach(p => dropped.push(p));
+        }
+      }
+      all[id] = m; round.push(m);
+    });
+    W.push({ title: W.length === 0 ? "Ronda 1" : (W.length === 1 ? "Ronda 2" : "Ronda " + (W.length + 1)), matches: round });
+    if (champW || !round.every(m => m.done)) break;
+    field = next;
+  }
+
+  /* cuadro de perdedores: se arma cuando ya hay campeón de ganadores */
+  if (dbl && champW && dropped.length) {
+    let lf = dropped.slice();
+    guard = 0;
+    while (lf.length > 1 && guard++ < 40) {
+      const groups = heatChunks(lf, K);
+      const round = [], next = [];
+      groups.forEach((pl, i) => {
+        const id = "L" + L.length + "-" + i;
+        const ord = heatOrderOf(t, id, pl);
+        const m = {
+          id, side: "L", round: L.length, idx: i, final: groups.length === 1, players: pl.slice(),
+          order: ord, done: !!ord || pl.length === 1, advance: [],
+        };
+        if (pl.length === 1) m.order = pl.slice();
+        if (m.done) { m.advance = m.order.slice(0, 1); next.push(m.order[0]); }
+        all[id] = m; round.push(m);
+      });
+      L.push({ title: "Perdedores " + (L.length + 1), matches: round });
+      if (!round.every(m => m.done)) break;
+      lf = next;
+    }
+    if (lf.length === 1) champL = lf[0];
+  }
+
+  if (champW && champL) {
+    const ord = heatOrderOf(t, "GF", [champW, champL]);
+    gf = { id: "GF", side: "GF", round: 0, final: true, players: [champW, champL], order: ord, done: !!ord, advance: ord ? ord.slice(0, 1) : [] };
+    all.GF = gf;
+  }
+
+  const champ = (dbl && dropped.length) ? (gf && gf.done ? gf.order[0] : null) : champW;
+  return { kind: "heat", W, L, GF: gf, all, champ, champW, champL, dropped, roster: rosterOf(t), K, aW };
+}
+
+function heatPending(H) {
+  return Object.values(H.all).filter(m => !m.done && m.players.length > 1);
+}
+
+function heatLabel(m) {
+  if (m.side === "GF") return "Gran final";
+  if (m.side === "L") return "Perdedores R" + (m.round + 1);
+  return (m.final ? "Final" : "Ganadores R" + (m.round + 1));
+}
+
+function heatRules(t, H, m) {
+  const aL = t.format === "double" ? clamp(t.advL == null ? 1 : +t.advL, 0, H.K - 1) : 0;
+  if (m.side === "GF") return "El ganador de esta final se lleva el torneo.";
+  if (m.side === "L") return "Pasa 1 a la siguiente ronda de perdedores; el resto queda eliminado.";
+  if (m.final) return `El 1.º es campeón${aL ? ` y el ${aL + 1}.º baja a perdedores` : ""}.`;
+  const advN = Math.min(H.aW, Math.max(1, m.players.length - 1));
+  return `Pasan ${advN} a ganadores${aL ? `, ${aL} bajan a perdedores` : ""}; el resto queda eliminado.`;
+}
+
+function heatCard(t, m, clickable) {
+  const done = m.done && m.order;
+  const list = done ? m.order : m.players;
+  const rows = list.map((pid, i) => {
+    const place = done ? i + 1 : 0;
+    const passes = done && m.advance.indexOf(pid) >= 0;
+    const champ = done && m.final && i === 0;
+    return `<div class="p ${champ ? "win" : (passes ? "win" : "")} ${done && !passes && !champ ? "lose" : ""}">
+      <span class="s">${done ? place : ""}</span>
+      <span class="n"${clickable ? ` data-act="player" data-id="${pid}" style="cursor:pointer"` : ""}>${esc(pidName(t, pid))}</span>
+      <span class="c">${champ ? "🏆" : (passes ? "pasa" : "")}</span></div>`;
+  }).join("");
+  return `<div class="match heat ${done ? "done" : ""} ${t.stream === m.id ? "live" : ""}" data-act="heat" data-id="${m.id}">
+    ${rows}
+    <div class="p" style="border-top:1px solid rgba(255,255,255,.06);padding:.2rem .55rem">
+      <span class="tiny muted" style="flex:1">${heatLabel(m)} · ${m.players.length} jugadores</span>
+      ${m.done ? "" : `<span class="badge">pendiente</span>`}
+    </div>
+  </div>`;
+}
+
+function tabHeat(t, adm, H, clickable) {
+  const pend = heatPending(H);
+  const cols = H.W.concat(H.L);
+  if (H.GF) cols.push({ title: "Gran final", matches: [H.GF] });
+  const need = H.W.length && !H.champW ? "El cuadro de perdedores se arma cuando termine la llave de ganadores." : "";
+  const sched = pend.filter(m => m.players.length > 1).length;
+  return `
+  <div class="row" style="justify-content:space-between;margin-bottom:.6rem;gap:.6rem">
+    <div class="row">
+      <span class="badge">${H.K} por partida</span>
+      <span class="badge">pasan ${H.aW} a ganadores</span>
+      ${t.format === "double" ? `<span class="badge">${t.advL} a perdedores</span>` : `<span class="badge">sin perdedores</span>`}
+      <span class="badge ${sched ? "" : "ok"}">${sched ? sched + " pendientes" : "al día"}</span>
+      ${H.champ ? `<span class="badge ok">Campeón: ${esc(pidName(t, H.champ))}</span>` : ""}
+    </div>
+    ${adm ? `<button class="btn sm g danger" data-act="resetbracket" title="Borra todos los resultados">Reiniciar llaves</button>` : ""}
+  </div>
+  ${need ? `<div class="card tiny muted" style="margin-bottom:.6rem">${need}</div>` : ""}
+  <div class="bracket">
+    ${cols.map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">
+      ${c.matches.map(m => heatCard(t, m, clickable)).join("")}
+    </div></div>`).join("")}
+  </div>`;
+}
+
+/* modal: tocar en orden de llegada */
+let heatPick = [];
+let heatOpen = null;
+function openHeat(t, id) {
+  const H = computeHeat(t);
+  const m = H.all[id];
+  if (!m) return;
+  heatOpen = id;
+  heatPick = m.order ? m.order.slice() : [];
+  $("#modal").innerHTML = `
+  <div class="modal"><div class="box" data-stop>
+    <div class="row" style="justify-content:space-between">
+      <span class="label">${heatLabel(m)}</span>
+      <span class="tiny muted">${m.players.length} jugadores</span>
+    </div>
+    <div class="tiny muted" style="margin-top:.4rem">Tocá a cada jugador en el orden en que terminó la partida (1º, 2º, 3º…). Volvé a tocarlo para sacarlo.</div>
+    <div id="heatList" class="grid" style="gap:.4rem;margin-top:.7rem"></div>
+    <div class="row" style="margin-top:.9rem;flex-wrap:wrap">
+      <button class="btn p" data-act="heatsave" data-id="${m.id}">Guardar resultado</button>
+      <button class="btn sm g" data-act="heatclear">Reiniciar orden</button>
+      ${m.order ? `<button class="btn sm g danger" data-act="heatdel" data-id="${m.id}">Borrar resultado</button>` : ""}
+    </div>
+    <div class="tiny muted" style="margin-top:.5rem">${esc(heatRules(t, H, m))}</div>
+  </div></div>`;
+  paintHeat(t, m);
+  wireModal();
+}
+
+function paintHeat(t, m) {
+  const box = $("#heatList");
+  if (!box) return;
+  box.innerHTML = m.players.map(pid => {
+    const pos = heatPick.indexOf(pid);
+    return `<button class="pick ${pos >= 0 ? "on" : ""}" data-act="heatpick" data-id="${pid}">
+      <span class="pickn">${pos >= 0 ? pos + 1 : "·"}</span>
+      <span class="pickname">${esc(pidName(t, pid))}</span>
+      <span class="tiny muted">${esc(pidChar(t, pid) || "")}</span>
+    </button>`;
+  }).join("");
+}
+
+/* ============================================================
    RENDER
    ============================================================ */
 function render() {
@@ -2876,6 +3097,7 @@ function render() {
   if (r.name === "test") return renderTest();
   if (r.name === "reg") return renderReg(r.t);
   if (r.name === "watch") return renderWatch(r.t);
+  if (r.name === "gate") return renderGate(r.t);
   if (r.name === "trn") return renderTournament(r.t);
 }
 
@@ -2896,16 +3118,29 @@ function renderHome() {
         <div class="field"><span class="tiny muted">Juego</span><input name="game" placeholder="Street Fighter 6" maxlength="40"></div>
         <div class="field"><span class="tiny muted">Formato</span>
           <select name="format"><option value="double">Doble eliminación</option><option value="single">Eliminación directa</option></select></div>
+        <div class="field"><span class="tiny muted">Modalidad</span>
+          <select name="mode" data-mode><option value="duel">Duelo 1 vs 1 (pelea)</option><option value="heat">Por puestos · varios por partida</option></select></div>
         <div class="field"><span class="tiny muted">Cupo</span>
           <select name="size"><option value="auto">Automático</option><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div>
         <div class="field"><span class="tiny muted">Set</span>
           <select name="bestOf"><option value="3">Mejor de 3</option><option value="5">Mejor de 5</option></select></div>
-        <div class="field"><span class="tiny muted">Fase de grupos</span>
+        <div class="field" data-duel><span class="tiny muted">Fase de grupos</span>
           <select name="pools"><option value="0">Sin grupos</option><option value="2">2 pools</option><option value="4" selected>4 pools</option><option value="8">8 pools</option><option value="16">16 pools</option></select></div>
-        <div class="field"><span class="tiny muted">Pasan por pool</span>
+        <div class="field" data-duel><span class="tiny muted">Pasan por pool</span>
           <select name="advance"><option value="1">1 (solo el ganador)</option><option value="2" selected>2 (top 2)</option><option value="3">3</option></select></div>
         <div class="field"><span class="tiny muted">Admin PIN</span><input value="se genera solo" disabled></div>
       </div>
+      <div id="heatOpts" class="grid" style="grid-template-columns:1fr 1fr 1fr;gap:.6rem;display:none;border:1px dashed var(--line);border-radius:12px;padding:.6rem">
+        <div class="field"><span class="tiny muted">Jugadores por partida</span>
+          <select name="perMatch"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+        <div class="field"><span class="tiny muted">Pasan a ganadores</span>
+          <select name="advW"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+        <div class="field"><span class="tiny muted">Bajan a perdedores</span>
+          <select name="advL"><option value="0">ninguno</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        <div class="tiny muted" style="grid-column:1/-1">Ejemplo Mario Kart: 4 por partida, pasan 2 a ganadores y el 3.º baja a perdedores. El 4.º queda eliminado.</div>
+      </div>
+      <div class="field"><span class="tiny muted">Jueces (separados por coma) — cada uno recibe un PIN</span>
+        <input name="judges" placeholder="Ana, Beto (opcional)"></div>
       <div class="field"><span class="tiny muted">Personajes (separados por coma) — opcional</span>
         <input name="chars" placeholder="Ryu, Ken, Chun-Li, Cammy, Guile, Juri"></div>
       <div class="row"><button class="btn p" type="submit">Crear torneo</button>
@@ -2971,13 +3206,24 @@ function phaseOf(t, champ) {
   return champ ? "done" : "running";
 }
 
+function roleOf(t) {
+  if (isAdmin(t)) return "admin";
+  if (S.ui.judge && S.ui.judgeT === t.id) return "judge";
+  if (S.me && S.me[t.id] && (t.players || []).some(p => p.id === S.me[t.id])) return "player";
+  return "guest";
+}
+
 function renderTournament(t) {
-  const adm = isAdmin(t);
-  const judge = S.ui.judge && S.ui.judgeT === t.id;
-  if (!adm && !judge) return renderGate(t);
+  const role = roleOf(t);
+  if (role === "guest" || role === "player") return renderLive(t, role);
+  const adm = role === "admin";
+  const judge = role === "judge";
   const tab0 = S.ui.tab || "resumen";
   const tab = (!adm && (tab0 === "jueces" || tab0 === "ruleta")) ? "resumen" : tab0;
-  const { B, champ } = computeBracket(t);
+  const heat = t.mode === "heat";
+  const H = heat ? computeHeat(t) : null;
+  const duel = heat ? { B: null, champ: null } : computeBracket(t);
+  const B = duel.B, champ = heat ? H.champ : duel.champ;
   const ph = phaseOf(t, champ);
   const roster = rosterOf(t);
   const n = roster.length;
@@ -2987,32 +3233,34 @@ function renderTournament(t) {
     <div>
       <div class="row" style="gap:.5rem">
         <span class="badge ${ph === "running" ? "live" : ""}">${ph === "running" ? "En curso" : ph === "done" ? "Finalizado" : ph === "pools" ? "Fase de grupos" : "Inscripción"}</span>
-        <span class="badge">${t.format === "double" ? "Doble elim." : "Simple elim."}</span>
-        <span class="badge">BO${t.bestOf}</span>
-        ${judge && !adm ? `<span class="badge warn">Juez</span>` : ""}
+        ${heat
+          ? `<span class="badge">${H.K} por partida</span><span class="badge">pasan ${H.aW}</span>${t.format === "double" ? `<span class="badge">${t.advL} a perdedores</span>` : ""}`
+          : `<span class="badge">${t.format === "double" ? "Doble elim." : "Simple elim."}</span><span class="badge">BO${t.bestOf}</span>`}
+        ${judge ? `<span class="badge warn">Juez</span>` : ""}
       </div>
       <h1 style="font-size:clamp(1.4rem,4.5vw,2rem);margin-top:.45rem">${esc(t.name)}</h1>
-      <div class="muted tiny">${esc(t.game || "—")} · ${t.players.length} inscriptos · ${n} en llaves · ${ph === "reg" ? (t.cap ? "Cupo " + t.cap : "Sin cupo fijo") : "Bracket de " + t.size}</div>
+      <div class="muted tiny">${esc(t.game || "—")} · ${t.players.length} inscriptos · ${n} en llaves · ${ph === "reg" ? (t.cap ? "Cupo " + t.cap : "Sin cupo fijo") : (heat ? H.K + " jugadores por partida" : "Bracket de " + t.size)}</div>
     </div>
-    <div class="row">
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end">
       ${ph === "reg" && adm ? `<button class="btn p" data-act="start" ${n < 2 ? "disabled" : ""}>${t.poolCount ? "Sortear grupos" : "Iniciar torneo"}</button>` : ""}
-      <button class="btn sm g" data-act="edit">Editar</button>
+      ${adm ? `<button class="btn sm g" data-act="edit">Editar</button>` : ""}
       <button class="btn g sm" data-act="copy" data-link="${linkOf(t.id, "reg")}">Link de inscripción</button>
+      ${judge ? `<button class="btn sm g" data-act="leave">Salir</button>` : ""}
     </div>
   </div>
   <div class="tabs" style="margin:.9rem 0 .8rem">
     ${[["resumen", "Resumen"]]
-      .concat(t.pools ? [["pools", "Pools"]] : [])
+      .concat(!heat && t.pools ? [["pools", "Pools"]] : [])
       .concat([["jugadores", "Jugadores"], ["bracket", "Bracket"]])
       .concat(adm ? [["ruleta", "Ruleta"], ["jueces", "Jueces"]] : [])
       .map(([k, l]) => `<button class="tab" role="tab" aria-selected="${tab === k}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}
   </div>`;
 
   let body = "";
-  if (tab === "resumen") body = tabResumen(t, B, champ, n, adm, ph);
+  if (tab === "resumen") body = tabResumen(t, B, champ, n, adm, ph, H);
   if (tab === "pools") body = tabPools(t, adm);
   if (tab === "jugadores") body = tabPlayers(t, n, adm);
-  if (tab === "bracket") body = ph === "pools" ? tabBracketPending(t) : tabBracket(t, B, champ, adm);
+  if (tab === "bracket") body = ph === "pools" ? tabBracketPending(t) : (heat ? tabHeat(t, adm, H) : tabBracket(t, B, champ, adm));
   if (tab === "ruleta") body = tabRoulette(t);
   if (tab === "jueces") body = tabJudges(t);
 
@@ -3020,10 +3268,160 @@ function renderTournament(t) {
   if (tab === "resumen") drawQR(t);
 }
 
-function tabResumen(t, B, champ, n, adm, ph) {
+/* ---------------- vista de jugador / visitante ---------------- */
+function renderLive(t, role) {
+  const heat = t.mode === "heat";
+  const H = heat ? computeHeat(t) : null;
+  const { B, champ } = heat ? { B: null, champ: H.champ } : computeBracket(t);
+  const ph = phaseOf(t, champ);
+  const pid = role === "player" ? S.me[t.id] : null;
+  const my = pid ? myStatus(t, pid, B, H) : null;
+
+  const bracket = heat
+    ? tabHeat(t, false, H, true)
+    : (ph === "reg" ? "" : `<div class="bracket">${watchCols(t, B).map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">${c.ids.map(id => matchCard(t, B, B.matches[id], true)).join("")}</div></div>`).join("")}</div>`);
+
+  $("#app").innerHTML = `
+  <div class="row" style="justify-content:space-between;align-items:flex-start;gap:1rem">
+    <div>
+      <div class="row" style="gap:.5rem">
+        <span class="badge ${ph === "running" ? "live" : ""}">${ph === "running" ? "En curso" : ph === "done" ? "Finalizado" : ph === "pools" ? "Fase de grupos" : "Inscripción abierta"}</span>
+        ${heat ? `<span class="badge">${H.K} por partida</span>` : `<span class="badge">${t.format === "double" ? "Doble elim." : "Simple elim."}</span>`}
+        ${my ? `<span class="badge ok">Estás dentro</span>` : ""}
+      </div>
+      <h1 style="font-size:clamp(1.4rem,4.5vw,2rem);margin-top:.45rem">${esc(t.name)}</h1>
+      <div class="muted tiny">${esc(t.game || "—")} · ${t.players.length} inscriptos · ${rosterOf(t).length} en llaves</div>
+    </div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end">
+      ${ph === "reg" && !my ? `<a class="btn p" href="#/t/${t.id}/reg">Inscribirme</a>` : ""}
+      <a class="btn sm g" href="#/t/${t.id}/watch">Pantalla completa</a>
+    </div>
+  </div>
+  ${my ? myCard(t, my) : ""}
+  ${ph === "reg" ? `<div class="card grid" style="gap:.5rem;margin-top:.9rem">
+      <div class="label">Todavía no arrancó</div>
+      <div class="tiny muted">${my ? "Ya estás anotado. Cuando el organizador cierre la inscripción y genere las llaves, acá vas a ver tus partidas en vivo." : "Anotate con el botón de arriba. Cuando el organizador cierre la inscripción y genere las llaves, acá vas a ver tus partidas en vivo."}</div>
+      <div class="row"><span class="badge ok">${t.players.length} inscriptos</span>${t.cap ? `<span class="badge">Cupo ${t.cap}</span>` : ""}</div>
+    </div>
+    <div class="card" style="padding:.2rem;margin-top:.9rem">
+      <table><thead><tr><th>Jugador</th><th>Personaje</th></tr></thead><tbody>${regRows(t)}</tbody></table>
+    </div>`
+    : `<div style="margin-top:.9rem">${bracket}</div>`}
+  <div class="row tiny muted" style="margin-top:1.2rem;gap:1rem">
+    <a href="#/t/${t.id}/admin">Soy organizador o juez →</a>
+    <a href="#/t/${t.id}/watch">Bracket público</a>
+  </div>`;
+  document.querySelectorAll("#app [data-act='match']").forEach(el => el.removeAttribute("data-act"));
+  document.querySelectorAll("#app [data-act='heat']").forEach(el => el.removeAttribute("data-act"));
+}
+
+function myStatus(t, pid, B, H) {
+  const heat = !!H;
+  const out = { pid, pending: [], played: [], champ: heat ? H.champ : null, eliminated: false, heat };
+  if (heat) {
+    Object.values(H.all).forEach(m => {
+      if (m.players.indexOf(pid) < 0) return;
+      if (m.done) out.played.push(m); else out.pending.push(m);
+    });
+  } else {
+    out.champ = B.champ;
+    Object.values(B.matches).forEach(m => {
+      if (m.a !== pid && m.b !== pid) return;
+      if (m.done) out.played.push(m); else if (m.a !== BYE && m.b !== BYE) out.pending.push(m);
+    });
+  }
+  out.waitingL = heat && (H.dropped || []).indexOf(pid) >= 0 && !H.L.length && !H.champ;
+  out.eliminated = !out.pending.length && out.champ !== pid && !out.waitingL && !(out.played.length === 0 && t.phase === "reg");
+  return out;
+}
+
+function myCard(t, my) {
+  const pid = my.pid;
+  const next = my.pending[0];
+  const state = my.champ === pid ? "Campeón 🏆" : my.eliminated ? "Eliminado" : my.waitingL ? "En perdedores" : next ? "Seguís en carrera" : "Esperando";
+  const badge = my.champ === pid ? "ok" : my.eliminated ? "warn" : my.waitingL ? "" : "live";
+  let line = "";
+  const opp = next && !my.heat ? (next.a === pid ? next.b : next.a) : null;
+  if (my.champ === pid) line = "¡Ganaste el torneo!";
+  else if (my.eliminated) line = "Quedaste eliminado. Podés seguir mirando el bracket.";
+  else if (my.waitingL) line = "Bajaste a la llave de perdedores. Se arma cuando termine la de ganadores.";
+  else if (next) line = my.heat
+    ? `${heatLabel(next)} · contra ${next.players.filter(p => p !== pid).map(p => esc(pidName(t, p))).join(", ")}`
+    : `${matchLabel(next)} · ${opp ? "vs " + esc(pidName(t, opp)) : "esperando rival"}`;
+  else line = "Todavía no tenés partidas asignadas.";
+  return `<div class="card grid" style="gap:.4rem;margin-top:.9rem;border-color:#3d3450">
+    <div class="row" style="justify-content:space-between">
+      <div class="label">Tu situación</div>
+      <span class="badge ${badge}">${state}</span>
+    </div>
+    <div style="font-weight:800;font-size:1.15rem">${esc(pidName(t, pid))}</div>
+    <div class="tiny muted">${line}</div>
+    <div class="row">
+      <button class="btn sm g" data-act="player" data-id="${pid}">Mi trayectoria</button>
+      ${next ? `<button class="btn sm g" data-act="${my.heat ? "heat" : "match"}" data-id="${next.id}" disabled style="opacity:.5;cursor:default">Reporta el juez</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function openPlayer(t, pid) {
+  const p = (t.players || []).find(x => x.id === pid);
+  if (!p) return;
+  const heat = t.mode === "heat";
+  const H = heat ? computeHeat(t) : null;
+  const { B, champ } = heat ? { B: null, champ: H.champ } : computeBracket(t);
+  const rows = [];
+  if (heat) {
+    Object.values(H.all).filter(m => m.players.indexOf(pid) >= 0).forEach(m => {
+      const i = m.order ? m.order.indexOf(pid) : -1;
+      rows.push({
+        done: m.done,
+        label: heatLabel(m),
+        txt: m.done ? `${i + 1}º de ${m.players.length}` : `con ${m.players.filter(x => x !== pid).map(x => pidName(t, x)).join(", ")}`,
+        win: m.done && m.advance.indexOf(pid) >= 0,
+      });
+    });
+  } else {
+    Object.values(B.matches).filter(m => (m.a === pid || m.b === pid) && m.a !== BYE && m.b !== BYE).forEach(m => {
+      const win = m.done && ((m.a === pid && m.winner === "a") || (m.b === pid && m.winner === "b"));
+      const mine = m.a === pid ? m.sa : m.sb;
+      const theirs = m.a === pid ? m.sb : m.sa;
+      rows.push({
+        done: m.done,
+        label: matchLabel(m),
+        txt: m.done ? `${mine} – ${theirs} vs ${pidName(t, m.a === pid ? m.b : m.a)}` : `vs ${pidName(t, m.a === pid ? m.b : m.a)}`,
+        win,
+      });
+    });
+  }
+  const alive = heat
+    ? !!(H.champ === pid || heatPending(H).some(m => m.players.indexOf(pid) >= 0) || ((H.dropped || []).indexOf(pid) >= 0 && !H.L.length))
+    : !!(B.champ === pid || playable(B).some(m => m.a === pid || m.b === pid));
+  $("#modal").innerHTML = `
+  <div class="modal"><div class="box" data-stop>
+    <div class="row" style="justify-content:space-between">
+      <span class="label">Trayectoria</span>
+      <span class="badge ${champ === pid ? "ok" : alive ? "" : "warn"}">${champ === pid ? "Campeón" : alive ? "En carrera" : "Eliminado"}</span>
+    </div>
+    <div style="font-weight:900;font-size:1.3rem;margin:.3rem 0">${esc(p.name)}</div>
+    <div class="tiny muted" style="margin-bottom:.6rem">${esc(p.char || "")}${p.seed ? ` · seed ${p.seed}` : ""}</div>
+    <div class="grid" style="gap:.35rem">
+      ${rows.map(r => `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:.35rem;gap:.6rem">
+        <span class="tiny ${r.win ? "" : "muted"}" style="${r.win ? "color:var(--ok)" : ""}">${r.done ? (r.win ? "✔ " : "✘ ") : "· "}${esc(r.label)}</span>
+        <span class="tiny muted" style="text-align:right">${esc(r.txt)}</span>
+      </div>`).join("") || `<div class="tiny muted">Sin partidas todavía.</div>`}
+    </div>
+    <div class="row" style="margin-top:.9rem"><button class="btn g" data-act="close">Cerrar</button></div>
+  </div></div>`;
+  wireModal();
+}
+
+function tabResumen(t, B, champ, n, adm, ph, H) {
   const url = linkOf(t.id, "reg");
-  const play = playable(B);
-  const next = play.filter(m => !t.stream || m.id !== t.stream).slice(0, 4);
+  const heat = !!H;
+  const pend = heat
+    ? heatPending(H).map(m => ({ id: m.id, kind: "heat", label: heatLabel(m), txt: m.players.map(p => esc(pidName(t, p))).join(" · ") }))
+    : playable(B).map(m => ({ id: m.id, kind: "match", label: matchLabel(m), txt: `${esc(pidName(t, m.a))} <span class="muted">vs</span> ${esc(pidName(t, m.b))}` }));
+  const next = pend.filter(m => !t.stream || m.id !== t.stream).slice(0, 4);
   return `
   <div class="grid" style="grid-template-columns:minmax(0,1fr);gap:.9rem;max-width:900px">
     ${champ ? `<div class="card" style="background:linear-gradient(120deg,rgba(255,46,136,.22),rgba(18,16,25,.9));border-color:#4a2440">
@@ -3068,11 +3466,11 @@ function tabResumen(t, B, champ, n, adm, ph) {
     })() : `
     <div class="card grid" style="gap:.5rem">
       <div class="row" style="justify-content:space-between"><div class="label">Próximas partidas</div>
-        <span class="tiny muted">${play.length} pendientes</span></div>
+        <span class="tiny muted">${pend.length} pendientes</span></div>
       ${next.length ? next.map(m => `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:.45rem">
-        <div class="tiny">${esc(pidName(t, m.a))} <span class="muted">vs</span> ${esc(pidName(t, m.b))}</div>
-        <div class="row"><span class="badge">${matchLabel(m)}</span>
-        <button class="btn sm g" data-act="match" data-id="${m.id}">Reportar</button></div>
+        <div class="tiny">${m.txt}</div>
+        <div class="row"><span class="badge">${m.label}</span>
+        <button class="btn sm g" data-act="${m.kind}" data-id="${m.id}">Reportar</button></div>
       </div>`).join("") : `<div class="tiny muted">Sin partidas pendientes.</div>`}
     </div>`}
   </div>`;
@@ -3088,7 +3486,7 @@ function tabBracketPending(t) {
 }
 
 function poolsEditable(t) {
-  return t.phase === "pools" || (t.phase === "running" && !Object.keys(t.results || {}).length);
+  return true;   // siempre se pueden corregir resultados de grupos; si la llave ya está armada, se rearma
 }
 
 function tabPools(t, adm) {
@@ -3106,6 +3504,7 @@ function tabPools(t, adm) {
     </div>
     ${(editable && adm) ? `<button class="btn p" data-act="closepools">${t.phase === "pools" ? "Cerrar grupos y armar bracket" : "Volver a armar el bracket"}</button>` : ""}
   </div>
+  ${t.phase !== "pools" ? `<div class="card tiny muted" style="margin-bottom:.6rem">La llave ya está armada. Si corregís resultados de grupos, tocá <b>Volver a armar el bracket</b> para recalcular los clasificados (se borran los resultados de la llave).</div>` : ""}
   ${t.phase === "pools" ? `<div style="height:5px;background:#1b1726;border-radius:99px;overflow:hidden;margin-bottom:.8rem">
     <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .3s"></div></div>` : ""}
   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:.8rem">
@@ -3165,9 +3564,9 @@ function tabPlayers(t, n, adm) {
         ${roster.concat(t.players.filter(p => p.in === false)).map(p => `
           <tr>
             <td><input class="num" style="width:52px;padding:.25rem .35rem;text-align:center" data-act="seed" data-id="${p.id}" value="${p.seed || ""}" ${(t.phase !== "reg" || !adm) ? "disabled" : ""}></td>
-            <td><b>${esc(p.name)}</b>${p.tag ? ` <span class="muted tiny">${esc(p.tag)}</span>` : ""}</td>
+            <td><b data-act="player" data-id="${p.id}" style="cursor:pointer">${esc(p.name)}</b>${p.tag ? ` <span class="muted tiny">${esc(p.tag)}</span>` : ""}${adm ? ` <button class="btn sm g" data-act="renp" data-id="${p.id}" title="Cambiar nombre" style="padding:.1rem .35rem">✎</button>` : ""}</td>
             <td class="tiny muted">${esc(p.char || "—")}</td>
-            <td><button class="btn sm ${p.in === true ? "p" : "g"}" data-act="checkin" data-id="${p.id}">${p.in === true ? "Presente" : "Ausente"}</button></td>
+            <td>${adm ? `<button class="btn sm ${p.in === true ? "p" : "g"}" data-act="checkin" data-id="${p.id}">${p.in === true ? "Presente" : "Ausente"}</button>` : `<span class="badge ${p.in === true ? "ok" : ""}">${p.in === true ? "Presente" : "Ausente"}</span>`}</td>
             <td>${adm ? `<button class="btn sm g danger" data-act="delp" data-id="${p.id}">×</button>` : ""}</td>
           </tr>`).join("") || `<tr><td colspan="5" class="muted tiny" style="padding:1rem">Sin jugadores todavía.</td></tr>`}
         </tbody>
@@ -3175,10 +3574,12 @@ function tabPlayers(t, n, adm) {
     </div>
     <div class="row tiny muted">
       <span>${n} confirmados de ${t.players.length}</span>
-      <button class="btn sm g" data-act="allin">Marcar todos presentes</button>
+      ${adm ? `<button class="btn sm g" data-act="allin">Marcar todos presentes</button>` : ""}
       ${adm ? `<button class="btn sm g" data-act="autoseed">Siembra automática</button>
       <button class="btn sm g" data-act="shuffleseed">Siembra aleatoria</button>` : ""}
+      ${adm && t.phase !== "reg" ? `<button class="btn sm g danger" data-act="rearm" title="Vuelve a armar las llaves con la lista actual. Borra los resultados.">Rearmar llaves</button>` : ""}
     </div>
+    ${adm && t.phase !== "reg" ? `<div class="tiny muted">Si agregás o sacás jugadores con el torneo empezado, tocá <b>Rearmar llaves</b> para que la llave se reconstruya (se borran los resultados).</div>` : ""}
   </div>`;
 }
 
@@ -3202,7 +3603,7 @@ function tabBracket(t, B, champ, adm) {
   </div>`;
 }
 
-function matchCard(t, B, m) {
+function matchCard(t, B, m, clickable) {
   const lucky = m.a === BYE || m.b === BYE;
   if (lucky) {
     const who = m.a === BYE && m.b === BYE ? "—" : (m.a === BYE ? m.b : m.a);
@@ -3221,12 +3622,13 @@ function matchCard(t, B, m) {
     const lost = m.done && !won && pid && pid !== BYE;
     const sc = m.done ? (i === 0 ? m.sa : m.sb) : "";
     return `<div class="p ${won ? "win" : ""} ${lost ? "lose" : ""} ${pid === BYE ? "bye" : ""}">
-      <span class="s">${sc}</span><span class="n">${esc(name)}</span><span class="c">${esc(ch)}</span></div>`;
+      <span class="s">${sc}</span><span class="n"${clickable && pid && pid !== BYE ? ` data-act="player" data-id="${pid}" style="cursor:pointer"` : ""}>${esc(name)}</span><span class="c">${esc(ch)}</span></div>`;
   };
   return `<div class="match ${cls}" data-act="match" data-id="${m.id}">
     ${p(m.a, 0)}${p(m.b, 1)}
     <div class="p" style="border-top:1px solid rgba(255,255,255,.06);padding:.2rem .55rem">
       <span class="tiny muted" style="flex:1">${matchLabel(m)}</span>
+      ${!m.done && (!m.a || !m.b) ? `<span class="badge">esperando</span>` : ""}
       ${t.stream === m.id ? `<span class="badge live">EN VIVO</span>` : ""}
     </div>
   </div>`;
@@ -3264,6 +3666,14 @@ function tabJudges(t) {
       <div class="field" style="flex:1"><span class="tiny muted">Juez</span><input name="name" placeholder="Nombre del juez" required maxlength="24"></div>
       <button class="btn" type="submit">Agregar juez</button>
     </form>
+    ${(() => {
+      const cands = t.players.filter(p => !(t.judges || []).some(j => j.name === p.name));
+      return cands.length ? `<form class="card row" data-form="addjudgep" style="align-items:flex-end">
+        <div class="field" style="flex:1"><span class="tiny muted">O elegí un inscripto</span>
+          <select name="pid">${cands.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("")}</select></div>
+        <button class="btn" type="submit">Hacer juez</button>
+      </form>` : "";
+    })()}
     <div class="card" style="padding:.2rem">
       <table><thead><tr><th>Juez</th><th>PIN</th><th></th></tr></thead><tbody>
       ${(t.judges || []).map(j => `<tr><td>${esc(j.name)}</td><td class="num">${esc(j.pin)}</td>
@@ -3276,15 +3686,19 @@ function tabJudges(t) {
 }
 
 function renderGate(t) {
+  if (isAdmin(t) || (S.ui.judge && S.ui.judgeT === t.id)) return go("#/t/" + t.id);
   $("#app").innerHTML = `
   <div class="grid" style="max-width:380px;margin:2rem auto">
     <div class="card grid" style="gap:.7rem">
-      <div class="label">Acceso</div>
+      <div class="label">Acceso de gestión</div>
       <h2 style="font-size:1.3rem">${esc(t.name)}</h2>
-      <p class="tiny muted" style="margin:0">Ingresá el PIN de admin o de juez para gestionar el torneo.</p>
-      <input id="pin" inputmode="numeric" maxlength="6" placeholder="••••" style="letter-spacing:.4em;text-align:center;font-size:1.3rem">
+      <p class="tiny muted" style="margin:0">Ingresá el PIN de organizador o de juez para cargar resultados y editar. Los jugadores y el público no necesitan PIN: ven el bracket en vivo desde el link normal.</p>
+      <input id="pin" inputmode="numeric" maxlength="6" placeholder="••••" value="${esc(S.ui.pin || "")}" autofocus style="letter-spacing:.4em;text-align:center;font-size:1.3rem">
       <button class="btn p" data-act="pin">Entrar</button>
-      <a class="tiny muted" href="#/t/${t.id}/watch">Ver bracket público →</a>
+      <div class="row" style="justify-content:space-between">
+        <a class="tiny muted" href="#/t/${t.id}">← Volver</a>
+        <a class="tiny muted" href="#/t/${t.id}/watch">Bracket público →</a>
+      </div>
     </div>
   </div>`;
 }
@@ -3293,16 +3707,22 @@ function renderGate(t) {
 function renderReg(t) {
   const n = t.players.length;
   const closed = t.phase !== "reg";
+  const me = S.me && S.me[t.id] ? (t.players || []).find(p => p.id === S.me[t.id]) : null;
   $("#app").innerHTML = `
   <div class="grid" style="max-width:460px;margin:1rem auto;gap:.9rem">
     <div>
       <div class="label">Inscripción</div>
       <h1 style="font-size:1.7rem;margin-top:.2rem">${esc(t.name)}</h1>
-      <div class="muted tiny">${esc(t.game || "—")} · ${t.format === "double" ? "Doble eliminación" : "Eliminación directa"} · BO${t.bestOf}</div>
+      <div class="muted tiny">${esc(t.game || "—")} · ${t.mode === "heat" ? t.perMatch + " jugadores por partida" : (t.format === "double" ? "Doble eliminación" : "Eliminación directa")}${t.mode === "heat" ? "" : " · BO" + t.bestOf}</div>
     </div>
     <div class="row"><span class="badge ok">${n} inscriptos</span><span class="badge">Cupo ${t.cap || "libre"}</span></div>
 
-    ${closed ? `<div class="card">El registro ya cerró. Mirá el bracket en vivo en <a href="#/t/${t.id}/watch">este link</a>.</div>` : `
+    ${me ? `<div class="card grid" style="gap:.5rem;border-color:#3d3450">
+      <div class="badge ok">Ya estás anotado</div>
+      <div style="font-weight:800;font-size:1.15rem">${esc(me.name)}</div>
+      <div class="tiny muted">${closed ? "El torneo ya arrancó: seguí tu avance en vivo." : "Al llegar, hacé check-in con el organizador."}</div>
+      <a class="btn p" href="#/t/${t.id}">Ver mi situación y el bracket</a>
+    </div>` : closed ? `<div class="card">El registro ya cerró. Mirá el bracket en vivo en <a href="#/t/${t.id}/watch">este link</a>.</div>` : `
     <form class="card grid" data-form="reg" style="gap:.7rem">
       <div class="field"><span class="tiny muted">Nombre / gamertag</span><input name="name" required maxlength="24" autocomplete="nickname" placeholder="Tu nombre"></div>
       <div class="field"><span class="tiny muted">Personaje (opcional)</span><input name="char" maxlength="18" placeholder="Con quién jugás"></div>
@@ -3325,22 +3745,31 @@ function regRows(t) {
 }
 
 function renderWatch(t) {
-  const { B, champ } = computeBracket(t);
+  const heat = t.mode === "heat";
+  const H = heat ? computeHeat(t) : null;
+  const { B, champ } = heat ? { B: null, champ: H.champ } : computeBracket(t);
   const ph = phaseOf(t, champ);
+  const me = S.me && S.me[t.id];
   $("#app").innerHTML = `
-  <div class="row" style="justify-content:space-between;margin-bottom:.8rem">
+  <div class="row" style="justify-content:space-between;margin-bottom:.8rem;flex-wrap:wrap;gap:.6rem">
     <div>
       <div class="label">Bracket en vivo</div>
       <h1 style="font-size:1.5rem">${esc(t.name)}</h1>
-      <div class="muted tiny">${esc(t.game || "—")} · ${t.format === "double" ? "Doble eliminación" : "Eliminación directa"}</div>
+      <div class="muted tiny">${esc(t.game || "—")} · ${heat ? H.K + " por partida" : (t.format === "double" ? "Doble eliminación" : "Eliminación directa")}</div>
     </div>
     ${champ ? `<span class="badge ok">Campeón: ${esc(pidName(t, champ))}</span>` : `<span class="badge live">${ph === "reg" ? "Inscripción abierta" : "En curso"}</span>`}
   </div>
   ${ph === "reg" ? `<div class="card grid" style="gap:.5rem"><div class="tiny muted">Las llaves se publican cuando arranca el torneo.</div>
     <a class="btn sm p" href="#/t/${t.id}/reg" style="align-self:flex-start">Inscribirme</a></div>`
-  : `<div class="bracket">${watchCols(t, B).map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">${c.ids.map(id => matchCard(t, B, B.matches[id])).join("")}</div></div>`).join("")}</div>`}`;
-  // público: no acciones de reporte
+    : heat ? tabHeat(t, false, H, true)
+    : `<div class="bracket">${watchCols(t, B).map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">${c.ids.map(id => matchCard(t, B, B.matches[id], true)).join("")}</div></div>`).join("")}</div>`}
+  <div class="row tiny muted" style="margin-top:1rem;gap:1rem">
+    <a href="#/t/${t.id}">Inicio del torneo</a>
+    ${me ? `<a href="#/t/${t.id}">Mi situación</a>` : ""}
+  </div>`;
+  // público: sin acciones de reporte (los nombres sí abren la trayectoria)
   document.querySelectorAll("#app [data-act='match']").forEach(el => el.removeAttribute("data-act"));
+  document.querySelectorAll("#app [data-act='heat']").forEach(el => el.removeAttribute("data-act"));
 }
 function watchCols(t, B) {
   const cols = [];
@@ -3356,6 +3785,7 @@ function renderOverlay(t) {
   const layout = q.get("layout") === "full" ? "full" : "bar";
   if (q.get("bg") === "solid") { document.body.className = "overlay solid"; } else { document.body.className = "overlay"; }
   document.body.innerHTML = "";
+  if (t.mode === "heat") return renderHeatOverlay(t, layout);
   const { B } = computeBracket(t);
   const play = playable(B);
   let m = t.stream && B.matches[t.stream] && !B.matches[t.stream].done ? B.matches[t.stream] : play[0];
@@ -3410,6 +3840,55 @@ function renderOverlay(t) {
       <div class="next">
         <div class="hd">Próximas</div>
         ${up.map(x => `<div class="r"><span>${esc(nm(x.a))}</span><span>${esc(nm(x.b))}</span></div>`).join("")
+          || `<div class="r"><span>—</span><span>—</span></div>`}
+      </div>`;
+  }
+  document.body.appendChild(el);
+}
+
+function renderHeatOverlay(t, layout) {
+  const H = computeHeat(t);
+  const pend = heatPending(H);
+  const m = (t.stream && H.all[t.stream] && !H.all[t.stream].done) ? H.all[t.stream] : pend[0];
+  const up = pend.filter(x => !m || x.id !== m.id).slice(0, 4);
+  const names = m ? m.players.map(p => pidName(t, p)) : (H.champ ? [pidName(t, H.champ)] : []);
+  const title = m ? heatLabel(m) : (H.champ ? "Campeón" : "");
+  const el = document.createElement("div");
+  if (layout === "full") {
+    el.className = "ov";
+    el.innerHTML = `
+      <div class="main">
+        <div class="row" style="justify-content:space-between">
+          <span class="badge live" style="font-size:1vw;padding:.35vw .7vw">EN VIVO</span>
+          <span style="font-size:1.2vw;letter-spacing:.3em;text-transform:uppercase;color:#d8d0e8">${esc(t.game || t.name)}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:1.2vw 2vw;justify-content:center;align-items:baseline;margin:1.4vw 0">
+          ${names.map(n => `<span style="font-size:3vw;font-weight:900">${esc(n)}</span>`).join("") || `<span style="font-size:2vw;color:#8d85a0">Sin partidas</span>`}
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <span style="font-size:1.1vw;color:#cfc6e0">${esc(title)}</span>
+          <span style="font-size:1.1vw;color:#cfc6e0">${m ? m.players.length + " jugadores" : ""}</span>
+        </div>
+      </div>
+      <div class="side">
+        <div style="font-size:1vw;letter-spacing:.24em;text-transform:uppercase;color:#a79fbb;margin-bottom:1vw">Próximas</div>
+        ${up.map(x => `<div style="display:flex;justify-content:space-between;gap:1vw;padding:.55vw 0;border-top:1px solid rgba(255,255,255,.08);font-size:1vw">
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.players.map(p => pidName(t, p)).join(" · "))}</span>
+          <span style="color:#7d7590">${esc(heatLabel(x))}</span>
+        </div>`).join("") || `<div style="font-size:1.1vw;color:#8d85a0">Sin partidas</div>`}
+      </div>`;
+  } else {
+    el.className = "ovbar";
+    el.innerHTML = `
+      <div class="board" style="grid-template-columns:1fr">
+        <div class="a" style="align-items:center">
+          <div class="pn" style="font-size:2vw">${esc(names.join("  ·  ") || "—")}</div>
+          <div class="pc">${esc(title)}${m ? " · " + m.players.length + " jugadores" : ""}</div>
+        </div>
+      </div>
+      <div class="next">
+        <div class="hd">Próximas</div>
+        ${up.map(x => `<div class="r"><span>${esc(x.players.map(p => pidName(t, p)).join(" · "))}</span><span>${esc(heatLabel(x))}</span></div>`).join("")
           || `<div class="r"><span>—</span><span>—</span></div>`}
       </div>`;
   }
@@ -3489,9 +3968,9 @@ document.addEventListener("click", (e) => {
 
   if (act === "pin") {
     const v = ($("#pin") || {}).value || "";
-    if (v === t.adminPin) { S.owners[t.id] = true; saveDB(); render(); toast("Modo admin"); return; }
+    if (v === t.adminPin) { S.owners[t.id] = true; S.ui.pin = ""; saveDB(); go("#/t/" + t.id); toast("Modo admin"); return; }
     const j = (t.judges || []).find(x => x.pin === v);
-    if (j) { S.ui.judge = j.id; S.ui.judgeT = t.id; render(); toast("Hola, " + j.name); return; }
+    if (j) { S.ui.judge = j.id; S.ui.judgeT = t.id; S.ui.pin = ""; go("#/t/" + t.id); toast("Hola, " + j.name); return; }
     toast("PIN incorrecto"); return;
   }
   if (act === "start") {
@@ -3508,7 +3987,7 @@ document.addEventListener("click", (e) => {
     }
     t.size = nextPow2(n);
     if (rosterOf(t).length < 3) t.format = "single";
-    t.phase = "running"; t.results = {}; S.ui.tab = "bracket";
+    t.phase = "running"; t.results = {}; t.orders = {}; S.ui.tab = "bracket";
     touch(t); render();
     toast(fuera > 0 ? `Llaves generadas · ${fuera} sin check-in quedaron afuera` : "Llaves generadas");
     return;
@@ -3550,12 +4029,71 @@ document.addEventListener("click", (e) => {
   if (act === "autoseed") { seedApply(t, false); return; }
   if (act === "shuffleseed") { seedApply(t, true); return; }
   if (act === "delp") {
+    if (t.phase !== "reg" && !confirm("El torneo está en curso. Se saca de la lista; después tocá «Rearmar llaves» para actualizar la llave. ¿Seguir?")) return;
     t.players = t.players.filter(p => p.id !== el.dataset.id); touch(t); render(); return;
   }
   if (act === "deljudge") {
     t.judges = (t.judges || []).filter(j => j.id !== el.dataset.id); touch(t); render(); return;
   }
   if (act === "match") { openMatch(t, el.dataset.id); return; }
+  if (act === "heat") { openHeat(t, el.dataset.id); return; }
+  if (act === "heatpick") {
+    const pid = el.dataset.id;
+    const i = heatPick.indexOf(pid);
+    if (i >= 0) heatPick.splice(i, 1); else heatPick.push(pid);
+    paintHeat(t, computeHeat(t).all[heatOpen]);
+    return;
+  }
+  if (act === "heatclear") { heatPick = []; paintHeat(t, computeHeat(t).all[heatOpen]); return; }
+  if (act === "heatsave") {
+    const m = computeHeat(t).all[el.dataset.id];
+    if (!m) return;
+    if (heatPick.length !== m.players.length) return toast("Ordená a todos los jugadores del grupo");
+    t.orders = t.orders || {};
+    t.orders[m.id] = heatPick.slice();
+    if (t.stream === m.id) t.stream = null;
+    settle(t); touch(t); closeModal(); render();
+    toast(m.advance.length ? "Resultado guardado · pasa " + m.advance.map(p => pidName(t, p)).join(", ") : "Resultado guardado");
+    return;
+  }
+  if (act === "heatdel") {
+    delete t.orders[el.dataset.id];
+    settle(t); touch(t); closeModal(); render(); toast("Resultado borrado");
+    return;
+  }
+  if (act === "player") { openPlayer(t, el.dataset.id); return; }
+  if (act === "leave") {
+    S.ui.judge = null; S.ui.judgeT = null; render(); toast("Saliste del modo juez"); return;
+  }
+  if (act === "renp") {
+    const p = t.players.find(x => x.id === el.dataset.id);
+    if (!p) return;
+    const v = prompt("Nombre del jugador", p.name);
+    if (v == null) return;
+    const name = v.trim();
+    if (!name) return;
+    p.name = name.slice(0, 24);
+    touch(t); render(); toast("Nombre actualizado");
+    return;
+  }
+  if (act === "rearm") {
+    if (!confirm("¿Rearmar las llaves con la lista actual? Se borran todos los resultados.")) return;
+    t.results = {}; t.orders = {}; t.stream = null;
+    t.pools = null; t.qualified = null; t.poolResults = {};
+    const n = rosterOf(t).length;
+    if (t.mode !== "heat" && t.poolCount > 1 && n >= 4) {
+      buildPools(t);
+      t.phase = "pools";
+      S.ui.tab = "pools";
+    } else {
+      t.phase = "running";
+      if (t.mode !== "heat") t.size = nextPow2(n);
+      settle(t);
+      S.ui.tab = "bracket";
+    }
+    touch(t); render(); toast("Llaves rearmadas");
+    return;
+  }
   if (act === "quickwin") {
     const need = Math.ceil((t.bestOf || 3) / 2);
     t.results[el.dataset.id] = el.dataset.side === "a" ? [need, 0] : [0, need];
@@ -3565,7 +4103,7 @@ document.addEventListener("click", (e) => {
   }
   if (act === "resetbracket") {
     if (!confirm("¿Borrar todos los resultados y volver a empezar las llaves?")) return;
-    t.results = {}; t.stream = null; settle(t); touch(t); render(); return;
+    t.results = {}; t.orders = {}; t.stream = null; settle(t); touch(t); render(); return;
   }
   if (act === "stream") {
     t.stream = t.stream === el.dataset.id ? null : el.dataset.id;
@@ -3581,14 +4119,24 @@ document.addEventListener("keydown", (e) => {
   if (pin && document.activeElement === pin) {
     e.preventDefault();
     const r = route(); if (!r.t) return;
-    if (pin.value === r.t.adminPin) { S.owners[r.t.id] = true; saveDB(); render(); toast("Modo admin"); return; }
+    if (pin.value === r.t.adminPin) { S.owners[r.t.id] = true; S.ui.pin = ""; saveDB(); go("#/t/" + r.t.id); toast("Modo admin"); return; }
     const j = (r.t.judges || []).find(x => x.pin === pin.value);
-    if (j) { S.ui.judge = j.id; S.ui.judgeT = r.t.id; render(); toast("Hola, " + j.name); return; }
+    if (j) { S.ui.judge = j.id; S.ui.judgeT = r.t.id; S.ui.pin = ""; go("#/t/" + r.t.id); toast("Hola, " + j.name); return; }
     toast("PIN incorrecto");
   }
 });
 
+document.addEventListener("change", (e) => {
+  if (e.target && e.target.name === "mode") {
+    const heat = e.target.value === "heat";
+    const box = document.getElementById("heatOpts");
+    if (box) box.style.display = heat ? "grid" : "none";
+    document.querySelectorAll("[data-duel]").forEach(x => x.style.display = heat ? "none" : "");
+  }
+});
+
 document.addEventListener("input", (e) => {
+  if (e.target && e.target.id === "pin") { S.ui.pin = e.target.value; return; }
   const el = e.target.closest("[data-act='seed']");
   if (!el) return;
   const r = route(); const t = r.t; if (!t) return;
@@ -3608,6 +4156,8 @@ document.addEventListener("submit", (e) => {
       name: d.get("name"), game: d.get("game"), format: d.get("format"),
       size: d.get("size"), bestOf: d.get("bestOf"), chars: d.get("chars"),
       pools: d.get("pools"), advance: d.get("advance"),
+      mode: d.get("mode"), perMatch: d.get("perMatch"), advW: d.get("advW"), advL: d.get("advL"),
+      judges: d.get("judges"),
     });
     touch(t);
     go("#/t/" + t.id);
@@ -3622,21 +4172,37 @@ document.addEventListener("submit", (e) => {
 
   if (kind === "edit") {
     const name = String(d.get("name") || "").trim();
+    const mode = d.get("mode") === "heat" ? "heat" : "duel";
+    const perMatch = clamp(+d.get("perMatch") || 4, 2, 8);
+    const advW = clamp(+d.get("advW") || 2, 1, perMatch - 1);
+    const advL = clamp(d.get("advL") == null ? 0 : +d.get("advL"), 0, Math.max(0, perMatch - advW));
+    const format = d.get("format") === "single" ? "single" : "double";
+    const changed = mode !== (t.mode || "duel") || perMatch !== (+t.perMatch || 4) || advW !== (+t.advW || 2)
+      || advL !== (t.advL == null ? 1 : +t.advL) || format !== (t.format || "double");
+    if (changed && t.phase !== "reg" && (Object.keys(t.results || {}).length || Object.keys(t.orders || {}).length)) {
+      if (!confirm("Cambiaste el formato y hay partidas jugadas. Se borran los resultados y se rearman las llaves. ¿Seguir?")) return;
+      t.results = {}; t.orders = {}; t.phase = "running";
+    }
     if (name) t.name = name;
     t.game = String(d.get("game") || "").trim();
     t.bestOf = +d.get("bestOf") || 3;
+    t.mode = mode; t.perMatch = perMatch; t.advW = advW; t.advL = advL; t.format = format;
+    if (mode === "heat") { t.poolCount = 0; t.pools = null; t.qualified = null; }
+    if (t.phase !== "reg" && t.phase !== "pools") settle(t);
     touch(t); closeModal(); render(); toast("Torneo actualizado");
     return;
   }
   if (kind === "reg") {
     const name = String(d.get("name") || "").trim();
     if (!name) return;
-    t.players.push({ id: uid("p"), name, char: String(d.get("char") || "").trim(), level: String(d.get("level") || ""), seed: t.players.length + 1, in: false, createdAt: now() });
+    const pid = uid("p");
+    t.players.push({ id: pid, name, char: String(d.get("char") || "").trim(), level: String(d.get("level") || ""), seed: t.players.length + 1, in: false, createdAt: now() });
+    S.me = S.me || {}; S.me[t.id] = pid;
     touch(t);
     f.innerHTML = `<div class="grid" style="gap:.4rem;text-align:center;padding:1rem 0">
       <div style="font-size:1.6rem">✅</div><b>Estás dentro, ${esc(name)}</b>
       <div class="tiny muted">Hacé check-in con el organizador al llegar.</div>
-      <div class="row" style="justify-content:center"><a class="btn sm g" href="#/t/${t.id}/watch">Ver bracket</a></div></div>`;
+      <div class="row" style="justify-content:center"><a class="btn sm p" href="#/t/${t.id}">Ver mi situación</a><a class="btn sm g" href="#/t/${t.id}/watch">Ver bracket</a></div></div>`;
     const cnt = $("#app .badge.ok"), tb = $("#app tbody");
     if (cnt) cnt.textContent = t.players.length + " inscriptos";
     if (tb) tb.innerHTML = regRows(t);
@@ -3654,6 +4220,14 @@ document.addEventListener("submit", (e) => {
     t.judges.push({ id: uid("j"), name, pin: String(Math.floor(1000 + Math.random() * 9000)) });
     touch(t); render(); return;
   }
+  if (kind === "addjudgep") {
+    const p = t.players.find(x => x.id === d.get("pid"));
+    if (!p) return;
+    t.judges = t.judges || [];
+    if (t.judges.some(j => j.name === p.name)) return toast("Ya es juez");
+    t.judges.push({ id: uid("j"), name: p.name, pin: String(Math.floor(1000 + Math.random() * 9000)) });
+    touch(t); render(); toast(p.name + " ahora es juez"); return;
+  }
   if (kind === "chars") {
     t.chars = String(d.get("chars") || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean);
     touch(t); render(); toast("Lista actualizada"); return;
@@ -3662,6 +4236,11 @@ document.addEventListener("submit", (e) => {
 
 /* tras cargar o borrar un resultado: ¿terminó el torneo? */
 function settle(t) {
+  if (t.mode === "heat") {
+    const H = computeHeat(t);
+    t.phase = H.champ ? "done" : "running";
+    return;
+  }
   const { champ } = computeBracket(t);
   t.phase = champ ? "done" : "running";
 }
@@ -3684,12 +4263,18 @@ function openMatch(t, id) {
   if (!m) return;
   const nm = (p) => p === BYE ? "BYE" : p ? pidName(t, p) : "Por definir";
   const locked = !m.a || !m.b || m.a === BYE || m.b === BYE;
+  const feeders = Object.values(B.matches).filter(x =>
+    (x.nextWin && x.nextWin[0] === id) || (x.nextLose && x.nextLose[0] === id));
+  const feedTxt = feeders.map(f => matchLabel(f)).join(" y ");
+  const nextW = m.nextWin && B.matches[m.nextWin[0]] ? matchLabel(B.matches[m.nextWin[0]]) : null;
+  const nextL = m.nextLose && B.matches[m.nextLose[0]] ? matchLabel(B.matches[m.nextLose[0]]) : null;
   $("#modal").innerHTML = `
   <div class="modal">
     <div class="box" data-stop>
       <div class="row" style="justify-content:space-between"><span class="label">${matchLabel(m)}</span>
         ${m.done ? `<span class="badge ok">Finalizada</span>` : `<span class="badge">Pendiente</span>`}</div>
       <div class="grid" style="gap:.7rem;margin-top:.8rem">
+        ${locked ? `<div class="card tiny muted" style="padding:.55rem .7rem">Todavía no se puede jugar: falta el resultado de <b>${esc(feedTxt || "la ronda anterior")}</b>.</div>` : ""}
         ${locked ? "" : `<div class="row" style="gap:.5rem">
           <button class="btn sm p" data-act="quickwin" data-id="${id}" data-side="a" style="flex:1">Gana ${esc(nm(m.a))}</button>
           <button class="btn sm p" data-act="quickwin" data-id="${id}" data-side="b" style="flex:1">Gana ${esc(nm(m.b))}</button>
@@ -3699,7 +4284,7 @@ function openMatch(t, id) {
             <div><b>${esc(nm(p))}</b><div class="tiny muted">${esc(p && p !== BYE ? pidChar(t, p) : "")}</div></div>
             <input type="number" min="0" max="9" value="${m.done ? sc : ""}" data-score="${k}" style="width:64px;text-align:center" ${locked ? "disabled" : ""}>
           </div>`).join("")}
-        <div class="tiny muted">El ganador es quien tenga más sets. En doble eliminación el perdedor baja a Losers.</div>
+        <div class="tiny muted">Gana quien tenga más sets.${nextW ? ` El ganador pasa a ${esc(nextW)}.` : " El ganador es el campeón."}${nextL ? ` El perdedor baja a ${esc(nextL)}.` : " El perdedor queda eliminado."}</div>
         <div class="row">
           <button class="btn p" data-act="save" data-id="${id}" ${locked ? "disabled" : ""}>Guardar resultado</button>
           <button class="btn g" data-act="stream" data-id="${id}">📺 ${t.stream === id ? "Quitar del stream" : "Al stream"}</button>
@@ -3764,6 +4349,7 @@ function openPoolMatch(t, id) {
 
 /* ---------------- editar torneo ---------------- */
 function openEdit(t) {
+  const heat = t.mode === "heat";
   $("#modal").innerHTML = `
   <div class="modal">
     <div class="box">
@@ -3771,11 +4357,26 @@ function openEdit(t) {
       <form data-form="edit" class="grid" style="gap:.6rem;margin-top:.7rem">
         <div class="field"><span class="tiny muted">Nombre del evento</span><input name="name" value="${esc(t.name)}" required maxlength="60"></div>
         <div class="field"><span class="tiny muted">Juego</span><input name="game" value="${esc(t.game || "")}" maxlength="40"></div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:.6rem">
+          <div class="field"><span class="tiny muted">Modalidad</span>
+            <select name="mode"><option value="duel"${!heat ? " selected" : ""}>Duelo 1 vs 1</option><option value="heat"${heat ? " selected" : ""}>Por puestos · varios por partida</option></select></div>
+          <div class="field"><span class="tiny muted">Formato</span>
+            <select name="format"><option value="double"${t.format === "double" ? " selected" : ""}>Doble eliminación</option><option value="single"${t.format === "single" ? " selected" : ""}>Eliminación directa</option></select></div>
+        </div>
         <div class="field"><span class="tiny muted">Set</span>
           <select name="bestOf">
             <option value="3"${t.bestOf === 3 ? " selected" : ""}>Mejor de 3</option>
             <option value="5"${t.bestOf === 5 ? " selected" : ""}>Mejor de 5</option>
           </select></div>
+        <div id="heatOpts" class="grid" style="grid-template-columns:1fr 1fr 1fr;gap:.6rem;display:${heat ? "grid" : "none"};border:1px dashed var(--line);border-radius:12px;padding:.6rem">
+          <div class="field"><span class="tiny muted">Por partida</span>
+            <select name="perMatch">${[2, 3, 4, 5, 6, 7, 8].map(n => `<option${(+t.perMatch || 4) === n ? " selected" : ""}>${n}</option>`).join("")}</select></div>
+          <div class="field"><span class="tiny muted">A ganadores</span>
+            <select name="advW">${[1, 2, 3, 4, 5, 6].map(n => `<option${(+t.advW || 2) === n ? " selected" : ""}>${n}</option>`).join("")}</select></div>
+          <div class="field"><span class="tiny muted">A perdedores</span>
+            <select name="advL">${[0, 1, 2, 3, 4].map(n => `<option value="${n}"${(t.advL == null ? 1 : +t.advL) === n ? " selected" : ""}>${n ? n : "ninguno"}</option>`).join("")}</select></div>
+        </div>
+        <div class="tiny muted">Cambiar la modalidad con partidas jugadas reinicia las llaves.</div>
         <div class="row"><button class="btn p" type="submit">Guardar</button>
           <button class="btn g" type="button" data-act="close">Cancelar</button></div>
       </form>
@@ -3942,6 +4543,77 @@ function runTests() {
     ok(!!r.champ, "reset: sin campeón");
     if (r.B.matches["GF-1"]) ok(r.B.matches["GF-1"].done, "reset: GF-1 sin jugar");
     out.push("grand final reset → " + (r.B.matches["GF-1"] ? "GF-1 jugada" : "no aplicó"));
+  }
+
+  // ---- modo por puestos (varios jugadores por partida) ----
+  const heatCfgs = [
+    { n: 16, K: 4, aW: 2, aL: 1, format: "double" },
+    { n: 16, K: 4, aW: 2, aL: 1, format: "single" },
+    { n: 11, K: 4, aW: 2, aL: 1, format: "double" },
+    { n: 9, K: 3, aW: 1, aL: 1, format: "double" },
+    { n: 20, K: 6, aW: 4, aL: 1, format: "double" },
+    { n: 7, K: 4, aW: 2, aL: 0, format: "double" },
+    { n: 5, K: 4, aW: 3, aL: 1, format: "double" },
+    { n: 5, K: 4, aW: 2, aL: 1, format: "single" },
+    { n: 2, K: 4, aW: 2, aL: 1, format: "double" },
+  ];
+  for (const cfg of heatCfgs) {
+    const t = {
+      id: "h", mode: "heat", perMatch: cfg.K, advW: cfg.aW, advL: cfg.aL, format: cfg.format,
+      players: [], orders: {}, chars: [], judges: [], results: {}, phase: "running",
+    };
+    for (let i = 0; i < cfg.n; i++) t.players.push({ id: "h" + i, name: "H" + i, seed: i + 1, in: true, createdAt: i });
+    let H = computeHeat(t);
+    let guard = 0;
+    while (guard++ < 500) {
+      const pend = heatPending(H);
+      if (!pend.length) break;
+      const m = pend[0];
+      // orden aleatorio
+      t.orders[m.id] = m.players.slice().sort(() => Math.random() - .5);
+      H = computeHeat(t);
+    }
+    const label = `heat ${cfg.n}/${cfg.K} aW${cfg.aW} ${cfg.format}`;
+    ok(guard < 500, `${label}: no termina`);
+    ok(!!H.champ, `${label}: sin campeón`);
+    // cada jugador aparece exactamente una vez por ronda de ganadores y nadie se repite en un grupo
+    let dup = false, missing = false;
+    for (const round of H.W) {
+      const seen = new Set();
+      for (const m of round.matches) {
+        if (new Set(m.players).size !== m.players.length) dup = true;
+        m.players.forEach(p => seen.add(p));
+      }
+      if (round.matches.some(m => m.players.length > cfg.K)) dup = true;
+    }
+    // todos los anotados jugaron al menos una vez
+    const played = new Set();
+    Object.values(H.all).forEach(m => m.players.forEach(p => played.add(p)));
+    if (played.size !== cfg.n) missing = true;
+    ok(!dup, `${label}: grupo con jugadores repetidos o de más`);
+    ok(!missing, `${label}: ${cfg.n - played.size} jugadores sin partida`);
+    out.push(`${label.padEnd(26)} → campeón ${H.champ ? "sí" : "no"}, rondas W ${H.W.length}${cfg.format === "double" ? `, L ${H.L.length}` : ""}, pendientes ${heatPending(H).length}`);
+  }
+
+  // no debe haber campeón antes de la gran final (modo fiesta, doble)
+  {
+    const t = {
+      id: "hg", mode: "heat", perMatch: 4, advW: 2, advL: 1, format: "double",
+      players: [], orders: {}, chars: [], judges: [], results: {}, phase: "running",
+    };
+    for (let i = 0; i < 8; i++) t.players.push({ id: "g" + i, name: "G" + i, seed: i + 1, in: true, createdAt: i });
+    let H = computeHeat(t);
+    let guard = 0;
+    while (guard++ < 50) {
+      const pend = heatPending(H).filter(m => m.side === "W");
+      if (!pend.length) break;
+      t.orders[pend[0].id] = pend[0].players.slice();
+      H = computeHeat(t);
+    }
+    ok(!!H.champW, "heat: sin campeón de ganadores");
+    ok(!H.champ, "heat: declaró campeón antes de la gran final");
+    ok(heatPending(H).length > 0, "heat: no quedan partidas pendientes de perdedores");
+    out.push("heat gran final → campeón solo al final: " + (H.champ ? "FALLA" : "OK"));
   }
 
   out.push("");
