@@ -44,7 +44,7 @@ es un archivo estático.
 | Paso | Quién | Qué pasa |
 |---|---|---|
 | Crear torneo | Admin | Nombre, juego, modalidad, formato (doble/simple), BO3/BO5, cupo, jueces y personajes. |
-| Inscripción | Jugador | Escanea el QR, pone nombre y personaje. Ve el contador en vivo y queda identificado en ese celular. |
+| Inscripción | Jugador | Escanea el QR, pone su nombre y —si el organizador lo habilitó— nick, personaje y nivel. Ve el contador en vivo y queda identificado en ese celular. |
 | Check-in | Admin | Marca quién llegó. Los que no están quedan afuera de las llaves. |
 | Seeding | Admin | Número de seed manual, siembra automática o aleatoria. |
 | Pools | Admin | Si el torneo tiene fase de grupos: *Sortear grupos*, reportar las partidas y *Cerrar grupos y armar bracket*. |
@@ -53,18 +53,24 @@ es un archivo estático.
 | Stream | Admin/Juez | Marca una partida "al stream" y el overlay la muestra. |
 | En vivo | Jugador | Ve su situación (avanza, espera rival, baja a perdedores, eliminado o campeón), el bracket y su trayectoria. |
 
-**Roles y PIN**
+**Roles y acceso**
 
-- El creador queda como admin en ese navegador automáticamente.
+- Al crear el torneo elegís una **contraseña de organizador**. Quedás como admin en ese
+  navegador automáticamente; con esa contraseña entrás desde otro celular o PC en
+  `#/t/ID/admin`.
 - **Solo admin y jueces cargan, editan o borran resultados.** El participante y el público
   solo miran: no tienen botones de reporte.
-- En **Jueces** está el PIN de admin (para entrar desde otro dispositivo) y se crean
-  jueces con su propio PIN, escribiendo el nombre o eligiendo un inscripto.
-- El juez entra por el link del torneo → *Soy organizador o juez* → su PIN. Puede reportar
-  y borrar resultados, marcar el stream y ver pools, pero no editar el torneo, tocar la
-  siembra, el check-in ni reiniciar llaves.
-- Los jugadores **no** necesitan PIN ni cuenta: el link normal (`#/t/ID`) ya les muestra
-  el torneo en vivo.
+- En **Jueces** agregás jueces externos o elegís un inscripto. Cada juez recibe su **QR y
+  link propio** (`#/t/ID/j/TOKEN`) y un PIN de respaldo. Escanea el QR una vez y queda con
+  el panel de gestión en ese celular, igual que el admin: resultados, jugadores, check-in,
+  nivel, siembra, stream y pools.
+- El juez **no** puede crear otros jueces, cambiar tu contraseña ni reiniciar o rearmar las
+  llaves, y no ve la pestaña *Editar*.
+- Los jugadores **no** necesitan contraseña ni cuenta: el link de inscripción o el del
+  torneo (`#/t/ID`) ya les muestra todo en vivo, sin ninguna opción de organizador.
+- En **Jugadores** el admin o un juez puede cambiar el **nivel** de cada jugador con el
+  selector de la tabla (—, Principiante, Intermedio, Avanzado), además de nombre, nick,
+  personaje, seed y check-in.
 
 **Vista del jugador (celular)**
 
@@ -100,10 +106,11 @@ es un archivo estático.
 
 **Editar el torneo**
 
-Arriba del resumen está **Editar**: cambia nombre del evento, juego, modalidad, formato
-(simple/doble) y BO3/BO5 en cualquier momento, incluso con el torneo en curso. Los links,
-el QR y las llaves no se tocan. Si cambiás el formato o la modalidad con partidas jugadas,
-la app avisa y rearma las llaves desde cero.
+El nombre del evento y el juego quedan fijos al crear. Arriba del resumen está **Editar**:
+cambia modalidad, formato (simple/doble), BO3/BO5, opciones del modo por puestos y **qué
+datos pedir al inscribirse** (nick, personaje y nivel, además del nombre), incluso con el
+torneo en curso. Los links, el QR y las llaves no se tocan. Si cambiás el formato o la
+modalidad con partidas jugadas, la app avisa y rearma las llaves desde cero.
 
 **Modo por puestos (Mario Kart, Smash, party games)**
 
@@ -189,6 +196,10 @@ create policy "public update" on tournaments for update using (true);
 > La clave `anon`/`publishable` está pensada para ir en el navegador; no uses la
 > `service_role` acá. Para torneos con premio real, conviene cerrar el registro y mover
 > la escritura a una función con PIN.
+>
+> La contraseña de organizador y los links de juez viajan dentro de los datos del torneo,
+> que cualquiera con la URL puede leer: sirven para ordenar el acceso entre amigos, no
+> como seguridad real.
 
 ---
 
@@ -209,7 +220,7 @@ create policy "public update" on tournaments for update using (true);
 ## 6. Límites conocidos
 
 - Sin Supabase: un solo navegador (las pestañas del mismo navegador sí se sincronizan).
-- Sin cuentas de usuario: el acceso es por PIN, no hay login real.
+- Sin cuentas de usuario: el acceso es por contraseña de organizador y link/QR de juez, no hay login real.
 - No hay historial de torneos por jugador ni ranking acumulado.
 - Agregar o sacar jugadores con el torneo en curso no reacomoda las llaves hasta tocar
   **Rearmar llaves** (se pierden los resultados cargados).
