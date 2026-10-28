@@ -10,7 +10,7 @@
   :root{
     --bg:#08070c; --panel:#121019; --panel2:#181524; --line:#2a2436;
     --txt:#f3eefc; --dim:#9a92ad; --acc:#ff2e88; --acc2:#22d3ee;
-    --ok:#34d399; --warn:#fbbf24; --bad:#f87171; --rad:14px;
+    --ok:#34d399; --warn:#fbbf24; --bad:#f87171; --win:#fb923c; --rad:14px;
   }
   html,body{margin:0;padding:0}
   body{
@@ -68,27 +68,52 @@
   .pmatch .n{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pmatch .s{text-align:center;font-variant-numeric:tabular-nums;font-weight:700;font-size:.78rem;color:var(--dim)}
   .pmatch .s.w{color:var(--ok)}
-  /* bracket */
-  .bracket{display:flex;gap:1.4rem;overflow-x:auto;padding:.5rem .2rem 1rem;align-items:stretch}
+  /* bracket estilo mapa */
+  .bheadrow{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem}
+  .bsection{margin-top:.8rem}
+  .bsection + .bsection{margin-top:1.2rem}
+  .bhead{display:flex;align-items:center;gap:.45rem;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:800;margin:0 0 .5rem}
+  .bdot{width:.5rem;height:.5rem;border-radius:50%;display:inline-block}
+  .bdot.w{background:var(--win)} .bdot.l{background:var(--acc2)} .bdot.g{background:var(--acc)}
+  .bracket{display:flex;gap:2rem;overflow-x:auto;padding:.4rem .2rem 1rem;align-items:stretch;scrollbar-width:thin}
   .bracket::-webkit-scrollbar{height:8px}
   .bracket::-webkit-scrollbar-thumb{background:#2e2740;border-radius:8px}
   .bracket::-webkit-scrollbar-track{background:transparent}
-  .round{display:flex;flex-direction:column;min-width:220px;flex:0 0 auto}
-  .round h4{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 .5rem;font-weight:800}
-  .round .ms{display:flex;flex-direction:column;justify-content:space-around;flex:1;gap:.6rem}
-  .match{border:1px solid var(--line);border-radius:11px;background:#121019;overflow:hidden;cursor:pointer;transition:.15s}
-  .match:hover{border-color:#453a5c;transform:translateY(-1px)}
-  .match.done{opacity:.82}
+  .round{display:flex;flex-direction:column;min-width:240px;flex:0 0 auto}
+  .round h4{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 .5rem;font-weight:800;white-space:nowrap}
+  .round .ms{display:flex;flex-direction:column;justify-content:space-around;flex:1;gap:.75rem;position:relative}
+  .round .ms .conn{position:absolute;right:-1rem;width:2px;background:#4a3d63;border-radius:2px;pointer-events:none}
+  .round:not(.last) .match::after{content:"";position:absolute;right:-1rem;top:calc(50% - 1px);width:1rem;height:2px;background:#4a3d63;pointer-events:none}
+  .round:not(.first) .match::before{content:"";position:absolute;left:-1rem;top:calc(50% - 1px);width:1rem;height:2px;background:#4a3d63;pointer-events:none}
+  .bracket.gf{justify-content:center;padding-bottom:.2rem}
+  .bracket.gf .match{width:300px;flex:0 0 auto}
+  .match{position:relative;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#14111d,#100e17);overflow:hidden;cursor:pointer;transition:.15s;box-shadow:0 6px 18px -16px #000}
+  .match:hover{border-color:#4a3d63;transform:translateY(-1px)}
+  .match.done{opacity:.9}
   .match.live{border-color:var(--acc);box-shadow:0 0 0 1px rgba(255,46,136,.35),0 8px 26px -14px var(--acc)}
-  .p{display:flex;align-items:center;gap:.5rem;padding:.45rem .55rem;font-size:.84rem}
+  .match.bye{opacity:.72}
+  .mhead{display:flex;align-items:center;gap:.4rem;padding:.32rem .5rem;background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.05);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .mno{font-weight:900;color:var(--txt);font-variant-numeric:tabular-nums}
+  .mrd{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mfoot{display:flex;align-items:center;justify-content:space-between;gap:.4rem;padding:.25rem .5rem;border-top:1px solid rgba(255,255,255,.05);font-size:.62rem}
+  .p{display:flex;align-items:center;gap:.5rem;padding:.48rem .55rem;font-size:.84rem;position:relative}
   .p + .p{border-top:1px solid rgba(255,255,255,.05)}
-  .p .s{width:1.1rem;text-align:center;font-weight:800;color:var(--dim);font-size:.72rem}
-  .p .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-  .p .c{font-size:.68rem;color:var(--dim);max-width:5.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .p.win{background:linear-gradient(90deg,rgba(52,211,153,.16),transparent)}
-  .p.win .s{color:var(--ok)}
-  .p.lose{opacity:.5}
+  .p .s{width:1.15rem;text-align:center;font-weight:900;color:var(--dim);font-size:.75rem;font-variant-numeric:tabular-nums}
+  .p .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+  .p .c{font-size:.65rem;color:var(--dim);max-width:6rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .p.win{background:linear-gradient(90deg,rgba(251,146,60,.22),rgba(251,146,60,.02));box-shadow:inset 3px 0 0 var(--win)}
+  .p.win .s{color:var(--win)}
+  .p.lose{opacity:.55}
   .p.bye .n{color:var(--dim);font-style:italic}
+  .p.first{background:linear-gradient(90deg,rgba(251,146,60,.25),rgba(251,146,60,.02));box-shadow:inset 3px 0 0 var(--win)}
+  .p.first .s{color:var(--win)}
+  .p.pass{background:linear-gradient(90deg,rgba(52,211,153,.14),transparent)}
+  .p.pass .s{color:var(--ok)}
+  .p.drop{background:linear-gradient(90deg,rgba(34,211,238,.12),transparent)}
+  .p.drop .s{color:var(--acc2)}
+  .p.out{opacity:.5}
+  .match.heat .p .s{width:1.3rem}
+  .match.heat .p .n{font-size:.82rem}
   /* elegir orden en partidas de varios jugadores */
   .pick{display:flex;align-items:center;gap:.6rem;background:#0f0d16;border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;font:inherit;color:inherit;cursor:pointer;text-align:left;width:100%}
   .pick:hover{border-color:#3d3450;background:#151120}
@@ -96,7 +121,6 @@
   .pickn{width:1.5rem;height:1.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;background:#221c31;color:var(--dim);flex:0 0 auto}
   .pick.on .pickn{background:var(--acc);color:#08120f}
   .pickname{flex:1;font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .match.heat .p .s{width:1.2rem}
   .empty{color:var(--dim);font-size:.78rem;padding:.5rem}
   .modal{position:fixed;inset:0;background:rgba(4,3,8,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:100}
   .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.1rem;width:100%;max-width:460px;max-height:90vh;overflow:auto;box-shadow:0 30px 80px -30px #000}
@@ -132,8 +156,10 @@
   .ovbar .next .r{display:flex;justify-content:space-between;gap:.6vw;font-size:.9vw;padding:.3vw 0;border-top:1px solid rgba(255,255,255,.07)}
   .ovbar .next .r span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   @media (max-width:760px){
-    .bracket{gap:1rem}
-    .round{min-width:200px}
+    .bracket{gap:1.4rem}
+    .round{min-width:210px}
+    .bracket.gf .match{width:240px}
+    .bheadrow{align-items:flex-start}
     .ov{grid-template-columns:1fr;height:auto}
     .ov .who{font-size:6vw}.ov .ch{font-size:2.6vw}.ov .vs{font-size:3vw}
     .ovbar{flex-direction:column;align-items:stretch;padding:4vw}
@@ -147,6 +173,7 @@
   <div class="mark"></div>
   <div class="brand">Bracket</div>
   <div class="sp"></div>
+  <div id="acct" class="row" style="gap:.4rem"></div>
   <button class="btn g sm" data-act="home">Torneos</button>
   <button class="btn g sm" data-act="settings">⚙︎</button>
 </header>
@@ -2482,11 +2509,11 @@ function loadDB() {
     const cfg = Object.assign({}, DEFAULT_CFG, d.cfg || {});
     if (!cfg.url) cfg.url = DEFAULT_CFG.url;   // sin configurar = usa la nube incluida
     if (!cfg.key) cfg.key = DEFAULT_CFG.key;
-    return { t: d.t || {}, owners: d.owners || {}, me: d.me || {}, judge: d.judge || {}, cfg, ui: {} };
-  } catch (e) { return { t: {}, owners: {}, me: {}, judge: {}, cfg: Object.assign({}, DEFAULT_CFG), ui: {} }; }
+    return { t: d.t || {}, owners: d.owners || {}, me: d.me || {}, judge: d.judge || {}, callsSeen: d.callsSeen || {}, people: d.people || [], cfg, ui: {} };
+  } catch (e) { return { t: {}, owners: {}, me: {}, judge: {}, callsSeen: {}, people: [], cfg: Object.assign({}, DEFAULT_CFG), ui: {} }; }
 }
 function saveDB() {
-  localStorage.setItem(KEY, JSON.stringify({ t: S.t, owners: S.owners, me: S.me || {}, judge: S.judge || {}, cfg: S.cfg }));
+  localStorage.setItem(KEY, JSON.stringify({ t: S.t, owners: S.owners, me: S.me || {}, judge: S.judge || {}, callsSeen: S.callsSeen || {}, people: S.people || [], cfg: S.cfg }));
 }
 let pushTimer = null;
 function touch(t) {
@@ -2526,6 +2553,7 @@ function route() {
     if (p[2] === "watch") return { name: "watch", t };
     if (p[2] === "admin") return { name: "gate", t };
     if (p[2] === "j" && p[3]) return { name: "jlink", t, token: p[3] };
+    if (p[2] === "p" && p[3]) return { name: "plink", t, token: p[3] };
     if (p[2] === "overlay") return { name: "overlay", t };
   }
   return { name: "home" };
@@ -2558,7 +2586,7 @@ function newTournament(o) {
     players: [],
     judges: (o.judges || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean)
       .map(name => ({ id: uid("j"), name, pin: String(Math.floor(1000 + Math.random() * 9000)), token: uid("k") + uid("k") })),
-    regFields: { nick: !!o.regNick, char: !!o.regChar, level: !!o.regLevel },
+    regFields: { char: !!o.regChar, level: !!o.regLevel },
     results: {},
     stream: null,
     phase: "reg",
@@ -2828,6 +2856,10 @@ function closePools(t) {
 function computeBracket(t) {
   const size = t.size || nextPow2(t.players.length || 2);
   const B = buildStructure(size, t.format);
+  let no = 0;
+  B.W.flat().forEach(id => { B.matches[id].no = ++no; });
+  B.L.flat().forEach(id => { B.matches[id].no = ++no; });
+  B.matches["GF-0"].no = "GF";
   const roster = rosterOf(t);
   const ord = seedOrder(size);
   for (let i = 0; i < B.W[0].length; i++) {
@@ -2848,6 +2880,14 @@ function computeBracket(t) {
       } else if (m.a && m.b && m.a !== BYE && m.b !== BYE && results[m.id]) {
         const r = results[m.id];
         if (+r[0] !== +r[1]) { resolve(B, t, m, +r[0], +r[1]); changed = true; }
+      } else if (m.a && m.b && m.a !== BYE && m.b !== BYE && (isRetired(t, m.a) || isRetired(t, m.b))) {
+        /* retirado: la partida pendiente se da por perdida; el rival avanza */
+        const ar = isRetired(t, m.a), br = isRetired(t, m.b);
+        const sa = ar && !br ? 0 : 1;
+        const sb = br && !ar ? 0 : (ar && br ? 0 : 1);
+        m.auto = true;
+        resolve(B, t, m, sa, sb);
+        changed = true;
       }
     }
   }
@@ -2861,6 +2901,7 @@ function computeBracket(t) {
     else if (B.matches["GF-0"].done) champ = B.matches["GF-0"].winPid;
   }
   if (champ === BYE) champ = null;
+  B.champ = champ;
   const losses = {};
   for (const m of Object.values(B.matches)) {
     if (!m.done || !m.winPid) continue;
@@ -2883,10 +2924,12 @@ function resolve(B, t, m, sa, sb) {
     if (nm && !nm.done) nm[ref[1]] = pid;
   };
   put(m.nextWin, wp);
-  if (m.nextLose && lp) put(m.nextLose, lp);
+  /* si el que pierde se retiró, su lugar en perdedores queda como BYE:
+     el rival de esa partida avanza solo y la llave no se traba */
+  if (m.nextLose && lp) put(m.nextLose, isRetired(t, lp) ? BYE : lp);
   if (m.id === "GF-0" && t.format === "double" && m.winner === "b") {
     if (!B.matches["GF-1"]) {
-      B.matches["GF-1"] = { id: "GF-1", side: "GF", round: 1, idx: 0, a: null, b: null, sa: 0, sb: 0, done: false, winner: null, winPid: null };
+      B.matches["GF-1"] = { id: "GF-1", side: "GF", round: 1, idx: 0, a: null, b: null, sa: 0, sb: 0, done: false, winner: null, winPid: null, no: "GF2" };
       B.GF.push("GF-1");
     }
     const g = B.matches["GF-1"];
@@ -2903,9 +2946,9 @@ function byId(t) {
   return map;
 }
 function matchLabel(m) {
-  if (m.side === "W") return m.round === 0 ? "Winners R1" : (m.nextWin && m.nextWin[0] === "GF-0" ? "Winners Final" : "Winners R" + (m.round + 1));
-  if (m.side === "L") return "Losers R" + (m.round + 1);
-  return m.id === "GF-0" ? "Grand Final" : "Grand Final · Reset";
+  if (m.side === "W") return m.round === 0 ? "Ganadores · R1" : (m.nextWin && m.nextWin[0] === "GF-0" ? "Final de ganadores" : "Ganadores · R" + (m.round + 1));
+  if (m.side === "L") return "Perdedores · R" + (m.round + 1);
+  return m.id === "GF-0" ? "Gran final" : "Gran final · Reset";
 }
 
 /* ============================================================
@@ -2915,14 +2958,20 @@ function matchLabel(m) {
 function heatChunks(ids, K) {
   const n = ids.length;
   if (!n) return [];
-  const groups = Math.max(1, Math.ceil(n / K));
-  const out = Array.from({ length: groups }, () => []);
-  ids.forEach((id, i) => {
-    const r = Math.floor(i / groups), pos = i % groups;
-    const gi = r % 2 === 0 ? pos : groups - 1 - pos;   // serpiente: los mejores repartidos
-    out[gi].push(id);
-  });
-  return out.filter(g => g.length);
+  K = Math.max(2, K);
+  if (n <= K) return [ids.slice()];
+  /* primero se llenan las partidas completas de K; el resto queda en la última.
+     Los mejores se reparten en serpiente entre las partidas completas. */
+  const full = Math.floor(n / K), rem = n % K;
+  const groups = Array.from({ length: full + (rem ? 1 : 0) }, () => []);
+  const main = ids.slice(0, full * K);
+  for (let i = 0; i < main.length; i++) {
+    const r = Math.floor(i / full), pos = i % full;
+    const gi = r % 2 === 0 ? pos : full - 1 - pos;
+    groups[gi].push(main[i]);
+  }
+  if (rem) groups[full] = ids.slice(full * K);
+  return groups.filter(g => g.length);
 }
 
 function heatOrderOf(t, id, players) {
@@ -2938,75 +2987,154 @@ function computeHeat(t) {
   const dbl = t.format === "double";
   const aL = dbl ? clamp(t.advL == null ? 1 : +t.advL, 0, K - 1) : 0;
   const all = {}, W = [], L = [];
-  let champW = null, champL = null, gf = null, dropped = [];
-  let field = rosterOf(t).map(p => p.id);
+  let champW = null, champL = null, gf = null;
+  const dropped = [];
+  let no = 0;
+  const roster = rosterOf(t).map(p => p.id);
+  let field = roster.slice();
   if (field.length === 1) champW = field[0];
+
+  /* perdedores: se construyen en paralelo a ganadores.
+     losersQueue = jugadores para la próxima ronda de perdedores.
+     pendingDrops = caídos que esperan que termine la ronda actual. */
+  let losersQueue = [];
+  let pendingDrops = [];
+  let losersRound = null;
+  let winnersDone = false;
+  const out = (pid) => isRetired(t, pid);
+
+  const buildRound = (ids, side, roundIndex, final) => {
+    const groups = heatChunks(ids, K);
+    const round = [], next = [];
+    let doneAll = true;
+    groups.forEach((pl, i) => {
+      const active = pl.filter(p => !out(p));
+      const id = idFor(side, roundIndex, i);
+      /* si la partida ya se jugó con el grupo original (antes de un retiro), se respeta */
+      const ordAll = heatOrderOf(t, id, pl);
+      let ord = ordAll || heatOrderOf(t, id, active);
+      let use = ordAll ? pl : active;
+      let extra = [];
+      /* perdedores: si la partida ya se jugó con menos jugadores y después
+         cayó uno más, se conserva el resultado y el nuevo espera la próxima ronda */
+      if (!ord && side === "L") {
+        const saved = (t.orders || {})[id];
+        if (saved && saved.length > 1 && saved.length < pl.length && saved.every(p => pl.indexOf(p) >= 0)) {
+          ord = saved.slice();
+          use = saved.slice();
+          extra = pl.filter(p => saved.indexOf(p) < 0);
+        }
+      }
+      if (!use.length) return; // grupo vacío: no existe la partida
+      const m = {
+        id, side, round: roundIndex, idx: i, final,
+        players: use.slice(),
+        order: ord,
+        done: !!ord || use.length === 1,
+        advance: [],
+        drops: [],
+        auto: use.length === 1,
+        retiredOut: pl.filter(p => out(p)),
+        no: ++no,
+      };
+      if (use.length === 1) m.order = use.slice();
+      if (m.done) {
+        if (side === "W") {
+          const advN = Math.min(aW, Math.max(1, use.length - 1));
+          if (final) {
+            m.advance = m.order.slice(0, 1);
+            champW = m.order[0];
+            if (dbl) {
+              m.drops = m.order.slice(1, 1 + aL);
+              m.drops.forEach(p => { dropped.push(p); pendingDrops.push(p); });
+            }
+          } else {
+            m.advance = m.order.slice(0, advN);
+            m.advance.forEach(p => next.push(p));
+            if (dbl) {
+              m.drops = m.order.slice(advN, advN + aL);
+              m.drops.forEach(p => { dropped.push(p); pendingDrops.push(p); });
+            }
+          }
+        } else {
+          m.advance = m.order.slice(0, 1);
+          next.push(m.order[0]);
+        }
+      } else {
+        doneAll = false;
+      }
+      all[id] = m; round.push(m);
+      if (extra.length) extra.forEach(p => pendingDrops.push(p));
+    });
+    return { round, next, doneAll };
+  };
+
+  const buildLosers = () => {
+    if (!dbl) return;
+    if (losersRound && !losersRound.done) return;
+    if (losersRound && losersRound.done) {
+      losersQueue = losersRound.next.slice();
+      losersRound = null;
+    }
+    if (pendingDrops.length) {
+      losersQueue = losersQueue.concat(pendingDrops);
+      pendingDrops = [];
+    }
+    let guard = 0;
+    while (losersQueue.length > 1 && guard++ < 40) {
+      const res = buildRound(losersQueue, "L", L.length, false);
+      L.push({ title: "Perdedores " + (L.length + 1), matches: res.round });
+      if (!res.doneAll) {
+        losersRound = { matches: res.round, next: res.next, done: false };
+        return;
+      }
+      losersQueue = res.next;
+    }
+    if (winnersDone && losersQueue.length === 1) champL = losersQueue[0];
+  };
 
   let guard = 0;
   while (field.length > 1 && guard++ < 40) {
     const groups = heatChunks(field, K);
     const final = groups.length === 1;
-    const round = [], next = [];
-    groups.forEach((pl, i) => {
-      const id = "W" + W.length + "-" + i;
-      const ord = heatOrderOf(t, id, pl);
-      const m = {
-        id, side: "W", round: W.length, idx: i, final, players: pl.slice(),
-        order: ord, done: !!ord || pl.length === 1, advance: [],
-      };
-      if (pl.length === 1) m.order = pl.slice();
-      if (m.done) {
-        const advN = Math.min(aW, Math.max(1, pl.length - 1));
-        m.advance = final ? m.order.slice(0, 1) : m.order.slice(0, advN);
-        if (final) {
-          champW = m.order[0];
-          if (dbl) m.order.slice(1, 1 + aL).forEach(p => dropped.push(p));
-        } else {
-          m.advance.forEach(p => next.push(p));
-          if (dbl) m.order.slice(advN, advN + aL).forEach(p => dropped.push(p));
-        }
-      }
-      all[id] = m; round.push(m);
-    });
-    W.push({ title: W.length === 0 ? "Ronda 1" : (W.length === 1 ? "Ronda 2" : "Ronda " + (W.length + 1)), matches: round });
-    if (champW || !round.every(m => m.done)) break;
-    field = next;
+    const res = buildRound(field, "W", W.length, final);
+    W.push({ title: final ? "Final de ganadores" : "Ganadores " + (W.length + 1), matches: res.round });
+    /* los perdedores se arman ya con los caídos de las partidas jugadas,
+       sin esperar a que termine toda la ronda de ganadores */
+    buildLosers();
+    if (!res.doneAll) break;
+    if (final) { winnersDone = true; break; }
+    field = res.next;
   }
-
-  /* cuadro de perdedores: se arma cuando ya hay campeón de ganadores */
-  if (dbl && champW && dropped.length) {
-    let lf = dropped.slice();
-    guard = 0;
-    while (lf.length > 1 && guard++ < 40) {
-      const groups = heatChunks(lf, K);
-      const round = [], next = [];
-      groups.forEach((pl, i) => {
-        const id = "L" + L.length + "-" + i;
-        const ord = heatOrderOf(t, id, pl);
-        const m = {
-          id, side: "L", round: L.length, idx: i, final: groups.length === 1, players: pl.slice(),
-          order: ord, done: !!ord || pl.length === 1, advance: [],
-        };
-        if (pl.length === 1) m.order = pl.slice();
-        if (m.done) { m.advance = m.order.slice(0, 1); next.push(m.order[0]); }
-        all[id] = m; round.push(m);
-      });
-      L.push({ title: "Perdedores " + (L.length + 1), matches: round });
-      if (!round.every(m => m.done)) break;
-      lf = next;
-    }
-    if (lf.length === 1) champL = lf[0];
-  }
+  if (champW) winnersDone = true;
+  if (winnersDone) buildLosers();
 
   if (champW && champL) {
-    const ord = heatOrderOf(t, "GF", [champW, champL]);
-    gf = { id: "GF", side: "GF", round: 0, final: true, players: [champW, champL], order: ord, done: !!ord, advance: ord ? ord.slice(0, 1) : [] };
+    const wOut = out(champW), lOut = out(champL);
+    let ord = heatOrderOf(t, "GF", [champW, champL]);
+    let auto = false;
+    if (wOut || lOut) {
+      const winner = wOut && !lOut ? champL : champW;
+      const loser = winner === champW ? champL : champW;
+      ord = [winner, loser];
+      auto = true;
+    }
+    gf = {
+      id: "GF", side: "GF", round: 0, final: true,
+      players: [champW, champL], order: ord,
+      done: !!ord || auto, advance: ord ? ord.slice(0, 1) : [],
+      auto, no: ++no,
+    };
     all.GF = gf;
   }
 
-  const champ = (dbl && dropped.length) ? (gf && gf.done ? gf.order[0] : null) : champW;
-  return { kind: "heat", W, L, GF: gf, all, champ, champW, champL, dropped, roster: rosterOf(t), K, aW };
+  const champ = (dbl && (dropped.length || L.length)) ? (gf && gf.done ? gf.order[0] : null) : champW;
+  /* jugadores que bajaron y todavía esperan que se arme su próxima ronda de perdedores */
+  const waiting = pendingDrops.concat(losersQueue);
+  return { kind: "heat", W, L, GF: gf, all, champ, champW, champL, dropped, waiting, roster: rosterOf(t), K, aW, aL };
 }
+
+function idFor(side, round, i) { return side + round + "-" + i; }
 
 function heatPending(H) {
   return Object.values(H.all).filter(m => !m.done && m.players.length > 1);
@@ -3014,8 +3142,8 @@ function heatPending(H) {
 
 function heatLabel(m) {
   if (m.side === "GF") return "Gran final";
-  if (m.side === "L") return "Perdedores R" + (m.round + 1);
-  return (m.final ? "Final" : "Ganadores R" + (m.round + 1));
+  if (m.side === "L") return "Perdedores · R" + (m.round + 1);
+  return (m.final ? "Final de ganadores" : "Ganadores · R" + (m.round + 1));
 }
 
 function heatRules(t, H, m) {
@@ -3034,43 +3162,81 @@ function heatCard(t, m, clickable) {
     const place = done ? i + 1 : 0;
     const passes = done && m.advance.indexOf(pid) >= 0;
     const champ = done && m.final && i === 0;
-    return `<div class="p ${champ ? "win" : (passes ? "win" : "")} ${done && !passes && !champ ? "lose" : ""}">
+    const drops = done && m.side === "W" && (m.drops || []).indexOf(pid) >= 0;
+    const cls = champ ? "first" : passes ? "pass" : drops ? "drop" : done ? "out" : "";
+    const label = champ ? "🏆" : passes ? "pasa" : drops ? "baja" : done ? "eliminado" : "";
+    return `<div class="p ${cls}">
       <span class="s">${done ? place : ""}</span>
-      <span class="n"${clickable ? ` data-act="player" data-id="${pid}" style="cursor:pointer"` : ""}>${esc(pidName(t, pid))}</span>
-      <span class="c">${champ ? "🏆" : (passes ? "pasa" : "")}</span></div>`;
+      <span class="n"${clickable ? ` data-act="player" data-id="${pid}" style="cursor:pointer"` : ""}>${esc(pidName(t, pid))}${isRetired(t, pid) ? ` <span class="badge warn">ret.</span>` : ""}</span>
+      <span class="c">${label}</span></div>`;
   }).join("");
+  const retNote = (m.retiredOut || []).length ? ` · ${m.retiredOut.length} retirado${m.retiredOut.length > 1 ? "s" : ""}` : "";
   return `<div class="match heat ${done ? "done" : ""} ${t.stream === m.id ? "live" : ""}" data-act="heat" data-id="${m.id}">
+    <div class="mhead"><span class="mno">#${m.no || ""}</span><span class="mrd">${heatLabel(m)}</span>${t.stream === m.id ? `<span class="badge live">EN VIVO</span>` : ""}</div>
     ${rows}
-    <div class="p" style="border-top:1px solid rgba(255,255,255,.06);padding:.2rem .55rem">
-      <span class="tiny muted" style="flex:1">${heatLabel(m)} · ${m.players.length} jugadores</span>
-      ${m.done ? "" : `<span class="badge">pendiente</span>`}
-    </div>
+    <div class="mfoot"><span class="tiny muted">${m.players.length} jugadores${m.auto ? " · pase directo" : ""}${retNote}</span>${done ? "" : `<span class="badge">pendiente</span>`}</div>
   </div>`;
 }
 
-function tabHeat(t, adm, H, clickable) {
-  const pend = heatPending(H);
-  const cols = H.W.concat(H.L);
-  if (H.GF) cols.push({ title: "Gran final", matches: [H.GF] });
-  const need = H.W.length && !H.champW ? "El cuadro de perdedores se arma cuando termine la llave de ganadores." : "";
-  const sched = pend.filter(m => m.players.length > 1).length;
+function heatConns(n, nextN, last) {
+  if (last || !nextN || n !== nextN * 2) return "";
+  const out = [];
+  for (let j = 0; j < nextN; j++) {
+    const top = ((2 * j + 0.5) / n) * 100;
+    const h = (1 / n) * 100;
+    out.push(`<span class="conn" style="top:${top}%;height:${h}%"></span>`);
+  }
+  return out.join("");
+}
+
+function bracketViewHeat(t, H, adm) {
+  const view = S.ui.bview || "all";
+  const showW = view !== "L";
+  const showL = view !== "W" && t.format === "double";
+  const sched = heatPending(H).length;
+  const gf = H.GF ? [H.GF] : [];
   return `
-  <div class="row" style="justify-content:space-between;margin-bottom:.6rem;gap:.6rem">
-    <div class="row">
+  <div class="bheadrow">
+    <div class="tabs" role="tablist">
+      <button class="tab" data-act="bview" data-view="all" aria-selected="${view === "all"}">Cuadro completo</button>
+      <button class="tab" data-act="bview" data-view="W" aria-selected="${view === "W"}">Ganadores</button>
+      ${t.format === "double" ? `<button class="tab" data-act="bview" data-view="L" aria-selected="${view === "L"}">Perdedores</button>` : ""}
+    </div>
+    <div class="row tiny muted" style="gap:.4rem;flex-wrap:wrap">
       <span class="badge">${H.K} por partida</span>
-      <span class="badge">pasan ${H.aW} a ganadores</span>
-      ${t.format === "double" ? `<span class="badge">${t.advL} a perdedores</span>` : `<span class="badge">sin perdedores</span>`}
+      <span class="badge">pasan ${H.aW}</span>
+      ${t.format === "double" ? `<span class="badge">${H.aL} a perdedores</span>` : `<span class="badge">sin perdedores</span>`}
       <span class="badge ${sched ? "" : "ok"}">${sched ? sched + " pendientes" : "al día"}</span>
       ${H.champ ? `<span class="badge ok">Campeón: ${esc(pidName(t, H.champ))}</span>` : ""}
+      ${adm ? `<button class="btn sm g danger" data-act="resetbracket" title="Borra todos los resultados">Reiniciar llaves</button>` : ""}
     </div>
-    ${adm ? `<button class="btn sm g danger" data-act="resetbracket" title="Borra todos los resultados">Reiniciar llaves</button>` : ""}
   </div>
-  ${need ? `<div class="card tiny muted" style="margin-bottom:.6rem">${need}</div>` : ""}
-  <div class="bracket">
-    ${cols.map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">
-      ${c.matches.map(m => heatCard(t, m, clickable)).join("")}
-    </div></div>`).join("")}
-  </div>`;
+  ${showW ? `<section class="bsection">
+    <div class="bhead"><span class="bdot w"></span>Ganadores</div>
+    <div class="bracket winners">
+      ${H.W.map((r, i) => `<div class="round ${i === H.W.length - 1 ? "last" : ""} ${i === 0 ? "first" : ""}">
+        <h4>${r.title}</h4><div class="ms">${r.matches.map(m => heatCard(t, m, true)).join("")}${heatConns(r.matches.length, H.W[i + 1] ? H.W[i + 1].matches.length : 0, i === H.W.length - 1)}</div>
+      </div>`).join("")}
+    </div>
+  </section>` : ""}
+  ${showL ? `<section class="bsection">
+    <div class="bhead"><span class="bdot l"></span>Perdedores</div>
+    ${H.L.length ? `<div class="bracket losers">
+      ${H.L.map((r, i) => `<div class="round ${i === H.L.length - 1 ? "last" : ""} ${i === 0 ? "first" : ""}">
+        <h4>${r.title}</h4><div class="ms">${r.matches.map(m => heatCard(t, m, true)).join("")}${heatConns(r.matches.length, H.L[i + 1] ? H.L[i + 1].matches.length : 0, i === H.L.length - 1)}</div>
+      </div>`).join("")}
+    </div>` : `<div class="card tiny muted">Se arma a medida que caen jugadores de la llave de ganadores.</div>`}
+    ${H.champL && !H.GF ? `<div class="tiny muted" style="margin-top:.5rem">${esc(pidName(t, H.champL))} espera en la final de perdedores.</div>` : ""}
+  </section>` : ""}
+  ${gf.length ? `<section class="bsection">
+    <div class="bhead"><span class="bdot g"></span>Gran final</div>
+    <div class="bracket gf">${gf.map(m => heatCard(t, m, true)).join("")}</div>
+  </section>` : ""}
+  `;
+}
+
+function tabHeat(t, adm, H, clickable) {
+  return bracketViewHeat(t, H, adm);
 }
 
 /* modal: tocar en orden de llegada */
@@ -3120,21 +3286,108 @@ function paintHeat(t, m) {
 function render() {
   const r = route();
   document.body.classList.toggle("overlay", r.name === "overlay");
-  if (r.name === "overlay") { renderOverlay(r.t); return; }
-  if (r.name === "home") return renderHome();
-  if (r.name === "settings") return renderSettings();
-  if (r.name === "missing") {
+  if (r.name === "overlay") { paintAccount(); renderOverlay(r.t); return; }
+  if (r.name === "home") renderHome();
+  else if (r.name === "settings") renderSettings();
+  else if (r.name === "missing") {
     $("#app").innerHTML = `<div class="card">Torneo no encontrado. <a href="#/">Volver</a>
       <div class="tiny muted" style="margin-top:.4rem">Si te pasaron este link recién, esperá un segundo: se está conectando con la nube…</div></div>`;
     pullRemote(false);
+  }
+  else if (r.name === "test") renderTest();
+  else if (r.name === "reg") renderReg(r.t);
+  else if (r.name === "watch") renderWatch(r.t);
+  else if (r.name === "gate") renderGate(r.t);
+  else if (r.name === "jlink") renderJudgeLink(r.t, r.token);
+  else if (r.name === "plink") renderPlayerLink(r.t, r.token);
+  else if (r.name === "trn") renderTournament(r.t);
+  paintAccount();
+}
+
+/* barra de cuenta: muestra el rango y permite entrar desde cualquier dispositivo */
+function paintAccount() {
+  const box = $("#acct");
+  if (!box) return;
+  const r = route();
+  if (!r.t || r.name === "overlay" || r.name === "test" || r.name === "settings" || r.name === "gate" || r.name === "jlink" || r.name === "plink" || r.name === "reg") {
+    box.innerHTML = "";
     return;
   }
-  if (r.name === "test") return renderTest();
-  if (r.name === "reg") return renderReg(r.t);
-  if (r.name === "watch") return renderWatch(r.t);
-  if (r.name === "gate") return renderGate(r.t);
-  if (r.name === "jlink") return renderJudgeLink(r.t, r.token);
-  if (r.name === "trn") return renderTournament(r.t);
+  const t = r.t;
+  const role = roleOf(t);
+  const p = role === "player" ? playerOf(t, S.me[t.id]) : null;
+  const j = role === "judge" ? judgeOf(t) : null;
+  const label = role === "admin" ? "Admin" : role === "judge" ? "Juez" : role === "player" ? "Jugador" : "Entrar";
+  const who = role === "judge" ? (j ? j.name : "") : role === "player" ? (p ? p.name : "") : "";
+  const cls = role === "admin" ? "ok" : role === "judge" ? "warn" : role === "player" ? "" : "live";
+  box.innerHTML = `<button class="btn sm g" data-act="account" data-id="${t.id}" title="Tu cuenta en este torneo">
+    <span class="badge ${cls}">${label}${who ? " · " + esc(who) : ""}</span>
+  </button>`;
+}
+
+function openAccount(t) {
+  const role = roleOf(t);
+  const p = role === "player" ? playerOf(t, S.me[t.id]) : null;
+  const j = role === "judge" ? judgeOf(t) : null;
+  const isReg = t.phase === "reg";
+  const body = role === "admin" ? `
+      <div class="card tiny muted" style="padding:.6rem">Estás como <b style="color:var(--txt)">organizador</b>. Podés administrar todo el torneo desde cualquier dispositivo con tu contraseña.</div>
+      <div class="row" style="margin-top:.6rem">
+        <button class="btn sm p" data-act="tab" data-tab="jueces">Jueces y accesos</button>
+        <button class="btn sm g" data-act="chpass">Cambiar contraseña</button>
+        <button class="btn sm g" data-act="logout">Cerrar sesión de organizador</button>
+      </div>`
+    : role === "judge" ? `
+      <div class="card tiny muted" style="padding:.6rem">Estás como <b style="color:var(--txt)">juez${j ? " · " + esc(j.name) : ""}</b>. Podés cargar resultados, editar jugadores y llamar turnos.</div>
+      <div class="row" style="margin-top:.6rem">
+        <button class="btn sm g" data-act="leave">Salir del modo juez</button>
+      </div>`
+    : role === "player" ? `
+      <div class="card tiny muted" style="padding:.6rem">Estás como <b style="color:var(--txt)">jugador${p ? " · " + esc(p.name) : ""}</b>. Este es tu acceso personal: guardá el link o el código para volver desde otro celular.</div>
+      ${p ? `<div class="row" style="margin-top:.6rem">
+        <button class="btn sm p" data-act="myqr" data-id="${p.id}">Mi link y QR</button>
+        <button class="btn sm g" data-act="logout">Salir de mi cuenta</button>
+      </div>` : ""}`
+    : `
+      <div class="card tiny muted" style="padding:.6rem">No iniciaste sesión en este torneo. Entrá con la contraseña de organizador, el PIN de un juez o el código de un jugador.</div>
+      <div class="row" style="margin-top:.6rem">
+        <button class="btn sm p" data-act="gotogate">Entrar como organizador o juez</button>
+      </div>
+      <form class="row" data-form="playercode" style="margin-top:.5rem;align-items:flex-end">
+        <div class="field" style="flex:1"><span class="tiny muted">Código de jugador</span><input name="code" placeholder="Ej. AB12CD" maxlength="12" autocapitalize="characters"></div>
+        <button class="btn sm g" type="submit">Entrar</button>
+      </form>
+      ${isReg ? `<a class="btn sm g" href="#/t/${t.id}/reg" style="margin-top:.5rem">Inscribirme</a>` : ""}`;
+  $("#modal").innerHTML = `
+  <div class="modal"><div class="box" data-stop>
+    <div class="row" style="justify-content:space-between">
+      <span class="label">Mi cuenta</span>
+      <span class="badge ${role === "admin" ? "ok" : role === "judge" ? "warn" : role === "player" ? "" : "live"}">${esc(roleName(t))}</span>
+    </div>
+    <div style="font-weight:900;font-size:1.15rem;margin:.35rem 0 .6rem">${esc(t.name)}</div>
+    ${body}
+    <div class="row" style="margin-top:.9rem;justify-content:flex-end"><button class="btn g" data-act="close">Cerrar</button></div>
+  </div></div>`;
+  wireModal();
+}
+
+function openPlayerQR(t, p) {
+  const link = playerLink(t, p);
+  $("#modal").innerHTML = `
+  <div class="modal"><div class="box" data-stop>
+    <div class="label">Cuenta del jugador</div>
+    <div style="font-weight:800;font-size:1.2rem;margin:.2rem 0 .7rem">${esc(p.name)}</div>
+    <div style="display:flex;justify-content:center"><div style="background:#fff;padding:.6rem;border-radius:12px;line-height:0"><canvas id="pqr" width="200" height="200"></canvas></div></div>
+    <div class="tiny muted" style="margin-top:.7rem;word-break:break-all">${esc(link)}</div>
+    <div class="row" style="margin-top:.5rem;justify-content:center"><span class="badge">Código: ${esc(pcode(t, p))}</span></div>
+    <div class="row" style="margin-top:.8rem;justify-content:center">
+      <button class="btn p" data-act="copy" data-link="${esc(link)}">Copiar link</button>
+      <button class="btn g" data-act="close">Cerrar</button>
+    </div>
+    <div class="tiny muted" style="margin-top:.6rem">Con este link o código, el jugador ve su situación, su lugar y el bracket desde cualquier celular, sin contraseña.</div>
+  </div></div>`;
+  wireModal();
+  qrInto($("#pqr"), link, 200);
 }
 
 /* ---------------- home ---------------- */
@@ -3161,7 +3414,7 @@ function renderHome() {
         <div class="field"><span class="tiny muted">Set</span>
           <select name="bestOf"><option value="3">Mejor de 3</option><option value="5">Mejor de 5</option></select></div>
         <div class="field" data-duel><span class="tiny muted">Fase de grupos</span>
-          <select name="pools"><option value="0">Sin grupos</option><option value="2">2 pools</option><option value="4" selected>4 pools</option><option value="8">8 pools</option><option value="16">16 pools</option></select></div>
+          <select name="pools"><option value="0" selected>Sin grupos</option><option value="2">2 pools</option><option value="4">4 pools</option><option value="8">8 pools</option><option value="16">16 pools</option></select></div>
         <div class="field" data-duel><span class="tiny muted">Pasan por pool</span>
           <select name="advance"><option value="1">1 (solo el ganador)</option><option value="2" selected>2 (top 2)</option><option value="3">3</option></select></div>
         <div class="field"><span class="tiny muted">Contraseña de organizador</span><input name="adminPass" type="text" minlength="4" maxlength="24" placeholder="mín. 4 caracteres" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><span class="tiny muted">Para entrar desde otro celular o PC</span></div>
@@ -3181,7 +3434,6 @@ function renderHome() {
         <input name="chars" placeholder="Ryu, Ken, Chun-Li, Cammy, Guile, Juri"></div>
       <div class="field"><span class="tiny muted">Qué pedir al inscribirse (además del nombre)</span>
         <div class="row" style="gap:1.2rem;flex-wrap:wrap;margin-top:.35rem">
-          <label class="row tiny" style="gap:.35rem;cursor:pointer"><input type="checkbox" name="regNick"> Nick</label>
           <label class="row tiny" style="gap:.35rem;cursor:pointer"><input type="checkbox" name="regChar" checked> Personaje</label>
           <label class="row tiny" style="gap:.35rem;cursor:pointer"><input type="checkbox" name="regLevel"> Nivel</label>
         </div>
@@ -3257,6 +3509,40 @@ function judgeOf(t) {
   const id = (S.ui.judge && S.ui.judgeT === t.id) ? S.ui.judge : (S.judge || {})[t.id];
   return id ? (t.judges || []).find(j => j.id === id) || null : null;
 }
+
+/* acceso de jugadores: link/QR propio o código corto */
+function ptok(t, p) { return p.token || (t.id + p.id); }
+function playerLink(t, p) { return base() + "#/t/" + t.id + "/p/" + ptok(t, p); }
+function pcode(t, p) { return p.code || (t.id.slice(-2) + p.id.slice(-3)).toUpperCase(); }
+function playerOf(t, pid) { return (t.players || []).find(p => p.id === pid) || null; }
+function isRetired(t, pid) { const p = playerOf(t, pid); return !!(p && p.retired); }
+function playerByCode(t, code) {
+  const c = String(code || "").trim().toUpperCase();
+  return (t.players || []).find(p => pcode(t, p) === c) || null;
+}
+function roleName(t) {
+  const r = roleOf(t);
+  if (r === "admin") return "Organizador";
+  if (r === "judge") { const j = judgeOf(t); return "Juez" + (j ? " · " + j.name : ""); }
+  if (r === "player") { const p = playerOf(t, S.me[t.id]); return "Jugador" + (p ? " · " + p.name : ""); }
+  return "Visitante";
+}
+function callPlayer(t, pid, matchId) {
+  if (!t || !pid) return;
+  t.calls = t.calls || {};
+  t.calls[pid] = { at: now(), by: roleName(t), match: matchId || null };
+  touch(t);
+  toast("Aviso enviado a " + pidName(t, pid));
+}
+function rememberPerson(name) {
+  const n = String(name || "").trim();
+  if (!n) return;
+  S.people = S.people || [];
+  if (!S.people.some(x => x.toLowerCase() === n.toLowerCase())) {
+    S.people.unshift(n);
+    S.people = S.people.slice(0, 80);
+  }
+}
 function tryLogin(t, v) {
   v = String(v || "").trim();
   if (!v) return null;
@@ -3320,7 +3606,7 @@ function renderTournament(t) {
         ${heat
           ? `<span class="badge">${H.K} por partida</span><span class="badge">pasan ${H.aW}</span>${t.format === "double" ? `<span class="badge">${t.advL} a perdedores</span>` : ""}`
           : `<span class="badge">${t.format === "double" ? "Doble elim." : "Simple elim."}</span><span class="badge">BO${t.bestOf}</span>`}
-        ${judge ? `<span class="badge warn">Juez</span>` : ""}
+        ${adm ? `<span class="badge ok">Admin</span>` : judge ? `<span class="badge warn">Juez · ${esc((judgeOf(t) || {}).name || "")}</span>` : ""}
       </div>
       <h1 style="font-size:clamp(1.4rem,4.5vw,2rem);margin-top:.45rem">${esc(t.name)}</h1>
       <div class="muted tiny">${esc(t.game || "—")} · ${t.players.length} inscriptos · ${n} en llaves · ${ph === "reg" ? (t.cap ? "Cupo " + t.cap : "Sin cupo fijo") : (heat ? H.K + " jugadores por partida" : "Bracket de " + t.size)}</div>
@@ -3361,10 +3647,13 @@ function renderLive(t, role) {
   const ph = phaseOf(t, champ);
   const pid = role === "player" ? S.me[t.id] : null;
   const my = pid ? myStatus(t, pid, B, H) : null;
+  const call = my ? unseenCall(t, pid) : null;
+  if (call) notifyCall(t, pid, call);
+  const rf = regFields(t);
 
   const bracket = heat
     ? tabHeat(t, false, H, true)
-    : (ph === "reg" ? "" : `<div class="bracket">${watchCols(t, B).map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">${c.ids.map(id => matchCard(t, B, B.matches[id], true)).join("")}</div></div>`).join("")}</div>`);
+    : (ph === "reg" ? "" : bracketView(t, B, false));
 
   $("#app").innerHTML = `
   <div class="row" style="justify-content:space-between;align-items:flex-start;gap:1rem">
@@ -3372,36 +3661,138 @@ function renderLive(t, role) {
       <div class="row" style="gap:.5rem">
         <span class="badge ${ph === "running" ? "live" : ""}">${ph === "running" ? "En curso" : ph === "done" ? "Finalizado" : ph === "pools" ? "Fase de grupos" : "Inscripción abierta"}</span>
         ${heat ? `<span class="badge">${H.K} por partida</span>` : `<span class="badge">${t.format === "double" ? "Doble elim." : "Simple elim."}</span>`}
-        ${my ? `<span class="badge ok">Estás dentro</span>` : ""}
+        ${my ? `<span class="badge ${my.retired ? "warn" : "ok"}">${my.retired ? "Retirado" : "Estás dentro"}</span>` : ""}
+        ${my && my.place ? `<span class="badge">Puesto ${my.place}</span>` : ""}
       </div>
       <h1 style="font-size:clamp(1.4rem,4.5vw,2rem);margin-top:.45rem">${esc(t.name)}</h1>
       <div class="muted tiny">${esc(t.game || "—")} · ${t.players.length} inscriptos · ${rosterOf(t).length} en llaves</div>
     </div>
     <div class="row" style="flex-wrap:wrap;justify-content:flex-end">
       ${ph === "reg" && !my ? `<a class="btn p" href="#/t/${t.id}/reg">Inscribirme</a>` : ""}
+      ${my ? `<button class="btn sm g" data-act="account" data-id="${t.id}">Mi cuenta</button>` : ""}
       <a class="btn sm g" href="#/t/${t.id}/watch">Pantalla completa</a>
     </div>
   </div>
+  ${call ? callAlert(t, pid, call) : ""}
   ${my ? myCard(t, my) : ""}
   ${ph === "reg" ? `<div class="card grid" style="gap:.5rem;margin-top:.9rem">
       <div class="label">Todavía no arrancó</div>
       <div class="tiny muted">${my ? "Ya estás anotado. Cuando el organizador cierre la inscripción y genere las llaves, acá vas a ver tus partidas en vivo." : "Anotate con el botón de arriba. Cuando el organizador cierre la inscripción y genere las llaves, acá vas a ver tus partidas en vivo."}</div>
       <div class="row"><span class="badge ok">${t.players.length} inscriptos</span>${t.cap ? `<span class="badge">Cupo ${t.cap}</span>` : ""}</div>
     </div>
-    <div class="card" style="padding:.2rem;margin-top:.9rem">
-      <table><thead><tr><th>Jugador</th><th>Personaje</th></tr></thead><tbody>${regRows(t)}</tbody></table>
-    </div>`
+    ${regTable(t)}`
     : `<div style="margin-top:.9rem">${bracket}</div>`}
   <div class="row tiny muted" style="margin-top:1.2rem;gap:1rem">
     <a href="#/t/${t.id}/watch">Bracket público</a>
+    <a href="#/t/${t.id}/admin">¿Sos juez? Entrá con tu PIN</a>
   </div>`;
   document.querySelectorAll("#app [data-act='match']").forEach(el => el.removeAttribute("data-act"));
   document.querySelectorAll("#app [data-act='heat']").forEach(el => el.removeAttribute("data-act"));
 }
 
+function unseenCall(t, pid) {
+  const c = (t.calls || {})[pid];
+  if (!c) return null;
+  const seen = (((S.callsSeen || {})[t.id]) || {})[pid] || 0;
+  return c.at > seen ? c : null;
+}
+let notifiedCalls = {};
+function notifyCall(t, pid, c) {
+  const key = t.id + ":" + pid + ":" + c.at;
+  if (notifiedCalls[key]) return;
+  notifiedCalls[key] = true;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      const ctx = new AC();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; g.gain.value = .08;
+      o.start(); o.stop(ctx.currentTime + .18);
+      setTimeout(() => ctx.close(), 600);
+    }
+  } catch (e) { /* sin audio */ }
+  try {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("¡Es tu turno!", { body: pidName(t, pid) + " · " + t.name, tag: key });
+    }
+  } catch (e) { /* sin avisos */ }
+}
+function callAlert(t, pid, c) {
+  const m = c.match ? (t.mode === "heat" ? computeHeat(t).all[c.match] : computeBracket(t).B.matches[c.match]) : null;
+  const label = m ? (t.mode === "heat" ? heatLabel(m) : matchLabel(m)) : "";
+  return `<div class="card grid" style="gap:.4rem;margin-top:.9rem;border-color:var(--warn);background:linear-gradient(120deg,rgba(251,191,36,.18),rgba(18,16,25,.9))">
+    <div class="row" style="justify-content:space-between"><div class="label">🔔 Es tu turno</div><span class="badge warn">Aviso</span></div>
+    <div style="font-weight:800;font-size:1.1rem">${esc(pidName(t, pid))}, el organizador te está llamando.</div>
+    <div class="tiny muted">${label ? esc(label) : "Acercate a la mesa."}${c.by ? " · " + esc(c.by) : ""}</div>
+    <div class="row">
+      <button class="btn p" data-act="dismisscall" data-id="${pid}" data-at="${c.at}">Voy</button>
+      ${("Notification" in window && Notification.permission !== "granted") ? `<button class="btn sm g" data-act="notif">Activar avisos del celular</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function aliveOf(t, pid, B, H) {
+  if (isRetired(t, pid)) return false;
+  if (H) {
+    if (H.champ === pid || H.champL === pid) return true;
+    if (heatPending(H).some(m => m.players.indexOf(pid) >= 0)) return true;
+    if ((H.waiting || []).indexOf(pid) >= 0) return true;
+    return false;
+  }
+  if (!B) return false;
+  if (B.champ === pid) return true;
+  if (playable(B).some(m => m.a === pid || m.b === pid)) return true;
+  const gf = B.matches["GF-0"];
+  if (gf && !gf.done && !gf.a) {
+    const lastL = B.L[B.L.length - 1] || [];
+    if (lastL.some(id => { const m = B.matches[id]; return m.done && m.winPid === pid; })) return true;
+  }
+  return false;
+}
+
+/* puesto estimado: 1 campeón, 2 finalista, 3.º/4.º semifinales, etc. */
+function placeOf(t, pid, B, H) {
+  if (!pid || !t) return null;
+  if (H) {
+    if (H.champ === pid) return 1;
+    if (aliveOf(t, pid, null, H)) return null;
+    const rankOf = (id) => {
+      let r = null;
+      Object.values(H.all).forEach(m => {
+        if (m.players.indexOf(id) < 0) return;
+        const v = m.side === "GF" ? 100000 : m.side === "L" ? 5000 + m.round : 1000 + m.round;
+        if (r == null || v > r) r = v;
+      });
+      return r == null ? -1 : r;
+    };
+    const mine = rankOf(pid);
+    if (mine < 0) return null;
+    return 1 + rosterOf(t).filter(p => p.id !== pid && rankOf(p.id) > mine).length;
+  }
+  if (!B) return null;
+  if (B.champ === pid) return 1;
+  if (aliveOf(t, pid, B, null)) return null;
+  const rankOf = (id) => {
+    let r = null;
+    Object.values(B.matches).forEach(m => {
+      if (!m.done || !m.winPid) return;
+      const lp = m[m.winner === "a" ? "b" : "a"];
+      if (lp !== id) return;
+      const v = m.side === "GF" ? 100000 : m.side === "L" ? 5000 + m.round : 1000 + m.round;
+      if (r == null || v > r) r = v;
+    });
+    return r == null ? -1 : r;
+  };
+  const mine = rankOf(pid);
+  if (mine < 0) return null;
+  return 1 + rosterOf(t).filter(p => p.id !== pid && rankOf(p.id) > mine).length;
+}
+
 function myStatus(t, pid, B, H) {
   const heat = !!H;
-  const out = { pid, pending: [], played: [], champ: heat ? H.champ : null, eliminated: false, heat };
+  const p = playerOf(t, pid);
+  const out = { pid, pending: [], played: [], champ: heat ? H.champ : null, eliminated: false, heat, retired: !!(p && p.retired), place: null };
   if (heat) {
     Object.values(H.all).forEach(m => {
       if (m.players.indexOf(pid) < 0) return;
@@ -3414,21 +3805,24 @@ function myStatus(t, pid, B, H) {
       if (m.done) out.played.push(m); else if (m.a !== BYE && m.b !== BYE) out.pending.push(m);
     });
   }
-  out.waitingL = heat && (H.dropped || []).indexOf(pid) >= 0 && !H.L.length && !H.champ;
-  out.eliminated = !out.pending.length && out.champ !== pid && !out.waitingL && !(out.played.length === 0 && t.phase === "reg");
+  out.waitingL = heat && !out.pending.length && (H.waiting || []).indexOf(pid) >= 0 && H.champ !== pid;
+  out.place = placeOf(t, pid, B, H);
+  out.eliminated = out.retired || (!out.pending.length && out.champ !== pid && !out.waitingL && !(out.played.length === 0 && t.phase === "reg"));
   return out;
 }
 
 function myCard(t, my) {
   const pid = my.pid;
   const next = my.pending[0];
-  const state = my.champ === pid ? "Campeón 🏆" : my.eliminated ? "Eliminado" : my.waitingL ? "En perdedores" : next ? "Seguís en carrera" : "Esperando";
-  const badge = my.champ === pid ? "ok" : my.eliminated ? "warn" : my.waitingL ? "" : "live";
+  const inL = my.waitingL || !!(next && next.side === "L");
+  const state = my.retired ? "Retirado" : my.champ === pid ? "Campeón 🏆" : my.eliminated ? "Eliminado" : inL ? "En perdedores" : next ? "Seguís en carrera" : "Esperando";
+  const badge = my.retired ? "warn" : my.champ === pid ? "ok" : my.eliminated ? "warn" : inL ? "warn" : next ? "live" : "";
   let line = "";
   const opp = next && !my.heat ? (next.a === pid ? next.b : next.a) : null;
-  if (my.champ === pid) line = "¡Ganaste el torneo!";
+  if (my.retired) line = "Te marcaron como retirado. Podés seguir mirando el bracket.";
+  else if (my.champ === pid) line = "¡Ganaste el torneo!";
   else if (my.eliminated) line = "Quedaste eliminado. Podés seguir mirando el bracket.";
-  else if (my.waitingL) line = "Bajaste a la llave de perdedores. Se arma cuando termine la de ganadores.";
+  else if (my.waitingL) line = "Bajaste a la llave de perdedores. Esperás rival para la próxima ronda.";
   else if (next) line = my.heat
     ? `${heatLabel(next)} · contra ${next.players.filter(p => p !== pid).map(p => esc(pidName(t, p))).join(", ")}`
     : `${matchLabel(next)} · ${opp ? "vs " + esc(pidName(t, opp)) : "esperando rival"}`;
@@ -3436,13 +3830,17 @@ function myCard(t, my) {
   return `<div class="card grid" style="gap:.4rem;margin-top:.9rem;border-color:#3d3450">
     <div class="row" style="justify-content:space-between">
       <div class="label">Tu situación</div>
-      <span class="badge ${badge}">${state}</span>
+      <div class="row" style="gap:.35rem">
+        ${my.place ? `<span class="badge">Puesto ${my.place}</span>` : ""}
+        <span class="badge ${badge}">${state}</span>
+      </div>
     </div>
     <div style="font-weight:800;font-size:1.15rem">${esc(pidName(t, pid))}</div>
     <div class="tiny muted">${line}</div>
     <div class="row">
       <button class="btn sm g" data-act="player" data-id="${pid}">Mi trayectoria</button>
-      ${next ? `<button class="btn sm g" data-act="${my.heat ? "heat" : "match"}" data-id="${next.id}" disabled style="opacity:.5;cursor:default">Reporta el juez</button>` : ""}
+      <button class="btn sm g" data-act="account" data-id="${t.id}">Mi cuenta</button>
+      ${next ? `<span class="tiny muted">El juez carga el resultado.</span>` : ""}
     </div>
   </div>`;
 }
@@ -3477,24 +3875,38 @@ function openPlayer(t, pid) {
       });
     });
   }
-  const alive = heat
-    ? !!(H.champ === pid || heatPending(H).some(m => m.players.indexOf(pid) >= 0) || ((H.dropped || []).indexOf(pid) >= 0 && !H.L.length))
-    : !!(B.champ === pid || playable(B).some(m => m.a === pid || m.b === pid));
+  const canManage = roleOf(t) === "admin" || roleOf(t) === "judge";
+  const alive = aliveOf(t, pid, B, H);
+  const place = placeOf(t, pid, B, H);
+  const rf = regFields(t);
+  const meta = [
+    (rf.char || canManage) ? p.char : "",
+    (rf.level || canManage) ? p.level : "",
+    p.seed ? "seed " + p.seed : "",
+  ].filter(Boolean);
   $("#modal").innerHTML = `
   <div class="modal"><div class="box" data-stop>
     <div class="row" style="justify-content:space-between">
       <span class="label">Trayectoria</span>
-      <span class="badge ${champ === pid ? "ok" : alive ? "" : "warn"}">${champ === pid ? "Campeón" : alive ? "En carrera" : "Eliminado"}</span>
+      <div class="row" style="gap:.35rem">
+        ${place ? `<span class="badge">Puesto ${place}</span>` : ""}
+        <span class="badge ${p.retired ? "warn" : champ === pid ? "ok" : alive ? "" : "warn"}">${p.retired ? "Retirado" : champ === pid ? "Campeón" : alive ? "En carrera" : "Eliminado"}</span>
+      </div>
     </div>
     <div style="font-weight:900;font-size:1.3rem;margin:.3rem 0">${esc(p.name)}</div>
-    <div class="tiny muted" style="margin-bottom:.6rem">${[p.nick ? "@" + p.nick : "", p.char || "", p.level || "", p.seed ? "seed " + p.seed : ""].filter(Boolean).map(esc).join(" · ") || "—"}</div>
+    <div class="tiny muted" style="margin-bottom:.6rem">${meta.map(esc).join(" · ") || "—"}</div>
     <div class="grid" style="gap:.35rem">
       ${rows.map(r => `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:.35rem;gap:.6rem">
         <span class="tiny ${r.win ? "" : "muted"}" style="${r.win ? "color:var(--ok)" : ""}">${r.done ? (r.win ? "✔ " : "✘ ") : "· "}${esc(r.label)}</span>
         <span class="tiny muted" style="text-align:right">${esc(r.txt)}</span>
       </div>`).join("") || `<div class="tiny muted">Sin partidas todavía.</div>`}
     </div>
-    <div class="row" style="margin-top:.9rem"><button class="btn g" data-act="close">Cerrar</button></div>
+    <div class="row" style="margin-top:.9rem;flex-wrap:wrap">
+      <button class="btn g" data-act="close">Cerrar</button>
+      <button class="btn sm g" data-act="myqr" data-id="${p.id}">Mi link y QR</button>
+      ${canManage ? `<button class="btn sm g" data-act="call" data-id="${p.id}">🔔 Avisar turno</button>` : ""}
+      ${canManage ? `<button class="btn sm g ${p.retired ? "" : "danger"}" data-act="retire" data-id="${p.id}">${p.retired ? "Reactivar" : "Retirar"}</button>` : ""}
+    </div>
   </div></div>`;
   wireModal();
 }
@@ -3554,6 +3966,7 @@ function tabResumen(t, B, champ, n, adm, ph, H) {
       ${next.length ? next.map(m => `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:.45rem">
         <div class="tiny">${m.txt}</div>
         <div class="row"><span class="badge">${m.label}</span>
+        <button class="btn sm g" data-act="callmatch" data-id="${m.id}" title="Avisar a los jugadores que es su turno">🔔</button>
         <button class="btn sm g" data-act="${m.kind}" data-id="${m.id}">Reportar</button></div>
       </div>`).join("") : `<div class="tiny muted">Sin partidas pendientes.</div>`}
     </div>`}
@@ -3636,28 +4049,40 @@ function tabPlayers(t, n, canManage, adm) {
     const list = levels.indexOf(cur) >= 0 ? levels : levels.concat([cur]);
     return list.map(v => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(v || "—")}</option>`).join("");
   };
+  const known = (S.people || []).filter(name => !t.players.some(p => p.name.toLowerCase() === name.toLowerCase())).slice(0, 24);
   return `
-  <div class="grid" style="gap:.8rem;max-width:980px">
-    ${canManage ? `<form class="card row" data-form="addp" style="align-items:flex-end;flex-wrap:wrap">
-      <div class="field" style="flex:1;min-width:140px"><span class="tiny muted">Nombre</span><input name="name" placeholder="Agregar jugador" required maxlength="24"></div>
-      <div class="field" style="width:120px"><span class="tiny muted">Nick</span><input name="nick" maxlength="18" placeholder="—"></div>
-      <div class="field" style="width:130px"><span class="tiny muted">Personaje</span><input name="char" maxlength="18" placeholder="—"></div>
-      <button class="btn" type="submit">Agregar</button>
-    </form>` : ""}
+  <div class="grid" style="gap:.8rem;max-width:1100px">
+    ${canManage ? `<div class="card grid" style="gap:.6rem">
+      <form class="row" data-form="addp" style="align-items:flex-end;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:160px"><span class="tiny muted">Nombre</span><input name="name" list="peopleList" placeholder="Agregar jugador" required maxlength="24"><datalist id="peopleList">${(S.people || []).map(x => `<option value="${esc(x)}">`).join("")}</datalist></div>
+        <div class="field" style="width:150px"><span class="tiny muted">Personaje</span><input name="char" list="charList" maxlength="18" placeholder="—"><datalist id="charList">${(t.chars || []).map(x => `<option value="${esc(x)}">`).join("")}</datalist></div>
+        <button class="btn" type="submit">Agregar</button>
+      </form>
+      ${known.length ? `<div class="row" style="gap:.35rem"><span class="tiny muted">Lista rápida:</span>${known.map(name => `<button class="btn sm g" data-act="quickperson" data-name="${esc(name)}">+ ${esc(name)}</button>`).join("")}</div>` : ""}
+      <form class="row" data-form="addmany" style="align-items:flex-end;gap:.5rem">
+        <div class="field" style="flex:1"><span class="tiny muted">Agregar varios (separados por coma o salto de línea)</span><textarea name="names" rows="2" placeholder="Ana, Beto, Cami"></textarea></div>
+        <button class="btn sm g" type="submit">Agregar todos</button>
+      </form>
+    </div>` : ""}
 
     <div class="card" style="padding:.2rem">
       <div style="overflow-x:auto">
       <table>
-        <thead><tr><th style="width:44px">Seed</th><th>Jugador</th><th>Personaje</th><th style="width:120px">Nivel</th><th style="width:90px">Check-in</th><th style="width:40px"></th></tr></thead>
+        <thead><tr><th style="width:44px">Seed</th><th>Jugador</th><th>Personaje</th><th style="width:120px">Nivel</th><th style="width:90px">Check-in</th><th style="width:190px">Acciones</th></tr></thead>
         <tbody>
         ${roster.concat(t.players.filter(p => p.in === false)).map(p => `
-          <tr>
+          <tr style="${p.retired ? "opacity:.55" : ""}">
             <td><input class="num" style="width:52px;padding:.25rem .35rem;text-align:center" data-act="seed" data-id="${p.id}" value="${p.seed || ""}" ${(t.phase !== "reg" || !canManage) ? "disabled" : ""}></td>
-            <td><b data-act="player" data-id="${p.id}" style="cursor:pointer">${esc(p.name)}</b>${p.nick ? ` <span class="muted tiny">@${esc(p.nick)}</span>` : ""}${canManage ? ` <button class="btn sm g" data-act="renp" data-id="${p.id}" title="Cambiar nombre" style="padding:.1rem .35rem">✎</button>` : ""}</td>
+            <td><b data-act="player" data-id="${p.id}" style="cursor:pointer">${esc(p.name)}</b>${p.retired ? ` <span class="badge warn">Retirado</span>` : ""}${canManage ? ` <button class="btn sm g" data-act="renp" data-id="${p.id}" title="Cambiar nombre" style="padding:.1rem .35rem">✎</button>` : ""}</td>
             <td class="tiny muted">${esc(p.char || "—")}</td>
             <td>${canManage ? `<select data-act="level" data-id="${p.id}" style="padding:.2rem .3rem;font-size:.8rem">${lvOptions(p)}</select>` : `<span class="tiny muted">${esc(p.level || "—")}</span>`}</td>
             <td>${canManage ? `<button class="btn sm ${p.in === true ? "p" : "g"}" data-act="checkin" data-id="${p.id}">${p.in === true ? "Presente" : "Ausente"}</button>` : `<span class="badge ${p.in === true ? "ok" : ""}">${p.in === true ? "Presente" : "Ausente"}</span>`}</td>
-            <td>${canManage ? `<button class="btn sm g danger" data-act="delp" data-id="${p.id}">×</button>` : ""}</td>
+            <td><div class="row" style="gap:.25rem;flex-wrap:nowrap">
+              ${canManage ? `<button class="btn sm g" data-act="myqr" data-id="${p.id}" title="Link y QR de su cuenta">Cuenta</button>` : ""}
+              ${canManage && !p.retired ? `<button class="btn sm g" data-act="call" data-id="${p.id}" title="Avisarle que es su turno">🔔</button>` : ""}
+              ${canManage ? `<button class="btn sm g ${p.retired ? "" : "danger"}" data-act="retire" data-id="${p.id}" title="${p.retired ? "Volver a habilitarlo" : "Marcar como retirado"}">${p.retired ? "Reactivar" : "Retirar"}</button>` : ""}
+              ${canManage ? `<button class="btn sm g danger" data-act="delp" data-id="${p.id}" title="Borrar jugador">×</button>` : ""}
+            </div></td>
           </tr>`).join("") || `<tr><td colspan="6" class="muted tiny" style="padding:1rem">Sin jugadores todavía.</td></tr>`}
         </tbody>
       </table></div>
@@ -3669,39 +4094,79 @@ function tabPlayers(t, n, canManage, adm) {
       <button class="btn sm g" data-act="shuffleseed">Siembra aleatoria</button>` : ""}
       ${adm && t.phase !== "reg" ? `<button class="btn sm g danger" data-act="rearm" title="Vuelve a armar las llaves con la lista actual. Borra los resultados.">Rearmar llaves</button>` : ""}
     </div>
-    ${canManage && t.phase !== "reg" ? `<div class="tiny muted">Si agregás o sacás jugadores con el torneo empezado, tocá <b>Rearmar llaves</b> para que la llave se reconstruya (se borran los resultados).</div>` : ""}
+    ${canManage && t.phase !== "reg" ? `<div class="tiny muted">Si agregás o sacás jugadores con el torneo empezado, ${adm ? `tocá <b>Rearmar llaves</b> para que la llave se reconstruya` : `pedile al organizador que rearme las llaves`} (se borran los resultados).</div>` : ""}
   </div>`;
+}
+
+function bracketRow(t, B, rounds, side, adm) {
+  return `<div class="bracket ${side === "L" ? "losers" : "winners"}">
+    ${rounds.map((ids, r) => {
+      const last = r === rounds.length - 1;
+      const n = ids.length;
+      const nextN = r + 1 < rounds.length ? rounds[r + 1].length : 0;
+      const conns = [];
+      if (!last && nextN && n === nextN * 2) {
+        for (let j = 0; j < nextN; j++) {
+          const top = ((2 * j + 0.5) / n) * 100;
+          const h = (1 / n) * 100;
+          conns.push(`<span class="conn" style="top:${top}%;height:${h}%"></span>`);
+        }
+      }
+      return `<div class="round ${last ? "last" : ""} ${r === 0 ? "first" : ""}">
+        <h4>${side === "W" ? (last ? "Final de ganadores" : "Ganadores R" + (r + 1)) : "Perdedores R" + (r + 1)}</h4>
+        <div class="ms">${ids.map(id => { const mm = B.matches[id]; if (!mm) console.warn("bracketRow: id sin partida", id, side); return matchCard(t, B, mm, true); }).join("")}${conns.join("")}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+function bracketView(t, B, adm) {
+  const view = S.ui.bview || "all";
+  const showW = view !== "L";
+  const showL = view !== "W" && B.format === "double";
+  const gf = B.GF.map(id => B.matches[id]).filter(Boolean);
+  return `
+  <div class="bheadrow">
+    <div class="tabs" role="tablist">
+      <button class="tab" data-act="bview" data-view="all" aria-selected="${view === "all"}">Cuadro completo</button>
+      <button class="tab" data-act="bview" data-view="W" aria-selected="${view === "W"}">Ganadores</button>
+      ${B.format === "double" ? `<button class="tab" data-act="bview" data-view="L" aria-selected="${view === "L"}">Perdedores</button>` : ""}
+    </div>
+    <div class="row tiny muted" style="gap:.4rem;flex-wrap:wrap">
+      <span class="badge">${playable(B).length} partidas pendientes</span>
+      ${B.champ ? `<span class="badge ok">Campeón: ${esc(pidName(t, B.champ))}</span>` : ""}
+      ${adm ? `<button class="btn sm g danger" data-act="resetbracket" title="Borra todos los resultados">Reiniciar llaves</button>` : ""}
+    </div>
+  </div>
+  ${showW ? `<section class="bsection">
+    <div class="bhead"><span class="bdot w"></span>Llave de ganadores</div>
+    ${bracketRow(t, B, B.W, "W", adm)}
+  </section>` : ""}
+  ${showL ? `<section class="bsection">
+    <div class="bhead"><span class="bdot l"></span>Llave de perdedores</div>
+    ${B.L.length ? bracketRow(t, B, B.L, "L", adm) : `<div class="card tiny muted">Se arma a medida que caen jugadores de la llave de ganadores.</div>`}
+  </section>` : ""}
+  ${gf.length ? `<section class="bsection">
+    <div class="bhead"><span class="bdot g"></span>Gran final</div>
+    ${B.matches["GF-1"] ? `<div class="tiny muted" style="margin-bottom:.4rem">Ganó el retador en la primera final: se juega una final extra (reset).</div>` : ""}
+    <div class="bracket gf">${gf.map(m => matchCard(t, B, m, true)).join("")}</div>
+  </section>` : ""}
+  `;
 }
 
 function tabBracket(t, B, champ, adm) {
-  const cols = [];
-  B.W.forEach((round, r) => cols.push({ title: r === B.W.length - 1 ? "Winners Final" : "Winners R" + (r + 1), ids: round }));
-  if (B.format === "double") B.L.forEach((round, r) => cols.push({ title: "Losers R" + (r + 1), ids: round }));
-  cols.push({ title: "Grand Final", ids: B.GF });
-  return `
-  <div class="row" style="justify-content:space-between;margin-bottom:.6rem">
-    <div class="row">
-      <span class="badge">${playable(B).length} partidas pendientes</span>
-      ${champ ? `<span class="badge ok">Campeón: ${esc(pidName(t, champ))}</span>` : ""}
-    </div>
-    ${adm ? `<button class="btn sm g danger" data-act="resetbracket" title="Borra todos los resultados">Reiniciar llaves</button>` : ""}
-  </div>
-  <div class="bracket">
-    ${cols.map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">
-      ${c.ids.map(id => matchCard(t, B, B.matches[id])).join("")}
-    </div></div>`).join("")}
-  </div>`;
+  return bracketView(t, B, adm);
 }
 
 function matchCard(t, B, m, clickable) {
+  if (!m) { console.warn("matchCard: partida inexistente", B && B.GF); return ""; }
+  const no = m.no != null ? m.no : "";
   const lucky = m.a === BYE || m.b === BYE;
   if (lucky) {
     const who = m.a === BYE && m.b === BYE ? "—" : (m.a === BYE ? m.b : m.a);
-    return `<div class="match done" style="cursor:default;opacity:.75">
-      <div class="p" style="padding:.3rem .55rem">
-        <span class="n" style="font-size:.8rem">${esc(who === BYE ? "—" : who ? pidName(t, who) : "—")}</span>
-        <span class="c">pase directo</span>
-      </div>
+    return `<div class="match done bye" style="cursor:default">
+      <div class="mhead"><span class="mno">#${no}</span><span class="mrd">${matchLabel(m)}</span></div>
+      <div class="p bye"><span class="s">–</span><span class="n">${esc(who && who !== BYE ? pidName(t, who) : "—")}</span><span class="c">pase directo</span></div>
     </div>`;
   }
   const cls = m.done ? "done" : (t.stream === m.id ? "live" : "");
@@ -3712,15 +4177,14 @@ function matchCard(t, B, m, clickable) {
     const lost = m.done && !won && pid && pid !== BYE;
     const sc = m.done ? (i === 0 ? m.sa : m.sb) : "";
     return `<div class="p ${won ? "win" : ""} ${lost ? "lose" : ""} ${pid === BYE ? "bye" : ""}">
-      <span class="s">${sc}</span><span class="n"${clickable && pid && pid !== BYE ? ` data-act="player" data-id="${pid}" style="cursor:pointer"` : ""}>${esc(name)}</span><span class="c">${esc(ch)}</span></div>`;
+      <span class="s">${sc}</span>
+      <span class="n"${clickable && pid && pid !== BYE ? ` data-act="player" data-id="${pid}" style="cursor:pointer"` : ""}>${esc(name)}${pid && pid !== BYE && isRetired(t, pid) ? ` <span class="badge warn">ret.</span>` : ""}</span>
+      <span class="c">${esc(ch)}</span></div>`;
   };
   return `<div class="match ${cls}" data-act="match" data-id="${m.id}">
+    <div class="mhead"><span class="mno">#${no}</span><span class="mrd">${matchLabel(m)}</span>${t.stream === m.id ? `<span class="badge live">EN VIVO</span>` : ""}</div>
     ${p(m.a, 0)}${p(m.b, 1)}
-    <div class="p" style="border-top:1px solid rgba(255,255,255,.06);padding:.2rem .55rem">
-      <span class="tiny muted" style="flex:1">${matchLabel(m)}</span>
-      ${!m.done && (!m.a || !m.b) ? `<span class="badge">esperando</span>` : ""}
-      ${t.stream === m.id ? `<span class="badge live">EN VIVO</span>` : ""}
-    </div>
+    <div class="mfoot"><span class="tiny muted">${m.done ? "Finalizada" : (!m.a || !m.b) ? "Esperando rival" : "Pendiente"}</span>${m.done && m.auto ? `<span class="badge warn">avance por retiro</span>` : ""}</div>
   </div>`;
 }
 
@@ -3766,17 +4230,18 @@ function tabJudges(t) {
       <button class="btn" type="submit">Hacer juez</button>
     </form>` : ""}
     <div class="card" style="padding:.2rem">
-      <table><thead><tr><th>Juez</th><th>PIN</th><th>Acceso</th><th></th></tr></thead><tbody>
+      <div style="overflow-x:auto"><table><thead><tr><th>Juez</th><th>PIN</th><th>Link personal</th><th></th></tr></thead><tbody>
       ${judges.map(j => `<tr>
-        <td>${esc(j.name)}</td>
-        <td class="num">${esc(j.pin)}</td>
-        <td><div class="row"><button class="btn sm g" data-act="jqr" data-id="${j.id}">QR</button>
+        <td><b>${esc(j.name)}</b></td>
+        <td class="num"><span class="badge">${esc(j.pin)}</span></td>
+        <td><div class="tiny muted" style="word-break:break-all;max-width:260px;margin-bottom:.25rem">${esc(judgeLink(t, j))}</div>
+          <div class="row"><button class="btn sm g" data-act="jqr" data-id="${j.id}">QR</button>
           <button class="btn sm g" data-act="copy" data-link="${esc(judgeLink(t, j))}">Copiar link</button></div></td>
         <td><button class="btn sm g danger" data-act="deljudge" data-id="${j.id}">×</button></td>
       </tr>`).join("") || `<tr><td colspan="4" class="muted tiny" style="padding:1rem">Sin jueces asignados.</td></tr>`}
-      </tbody></table>
+      </tbody></table></div>
     </div>
-    <div class="card tiny muted">El juez escanea su QR o abre el link y ve el mismo panel que vos: carga y borra resultados, edita jugadores, hace check-in y arma el stream. No puede crear jueces, cambiar tu contraseña ni reiniciar las llaves.</div>
+    <div class="card tiny muted">Cada juez tiene su propio QR, link y PIN. Al agregarlo se abre su QR para que lo escanees o se lo pases. Entra directo a su panel: carga y borra resultados, edita jugadores, hace check-in, llama turnos y arma el stream. No puede crear jueces, cambiar tu contraseña ni reiniciar las llaves.</div>
   </div>`;
 }
 
@@ -3833,6 +4298,24 @@ function renderJudgeLink(t, token) {
   toast("Hola, " + j.name + " · modo juez");
 }
 
+/* link personal de un jugador: entra a su cuenta sin contraseña */
+function renderPlayerLink(t, token) {
+  const p = (t.players || []).find(x => ptok(t, x) === token || pcode(t, x) === String(token || "").toUpperCase());
+  if (!p) {
+    $("#app").innerHTML = `<div class="grid" style="max-width:420px;margin:2rem auto"><div class="card grid" style="gap:.6rem">
+      <div class="label">Mi cuenta</div>
+      <div>Este link no es válido o el jugador fue quitado del torneo.</div>
+      <a class="btn sm g" href="#/t/${t.id}" style="align-self:flex-start">Ir al torneo</a>
+    </div></div>`;
+    return;
+  }
+  S.me = S.me || {};
+  S.me[t.id] = p.id;
+  saveDB();
+  go("#/t/" + t.id);
+  toast("Hola, " + p.name);
+}
+
 /* ---------------- public views ---------------- */
 function renderReg(t) {
   const n = t.players.length;
@@ -3840,7 +4323,7 @@ function renderReg(t) {
   const rf = regFields(t);
   const me = S.me && S.me[t.id] ? (t.players || []).find(p => p.id === S.me[t.id]) : null;
   $("#app").innerHTML = `
-  <div class="grid" style="max-width:460px;margin:1rem auto;gap:.9rem">
+  <div class="grid" style="max-width:480px;margin:1rem auto;gap:.9rem">
     <div>
       <div class="label">Inscripción</div>
       <h1 style="font-size:1.7rem;margin-top:.2rem">${esc(t.name)}</h1>
@@ -3852,35 +4335,55 @@ function renderReg(t) {
       <div class="badge ok">Ya estás anotado</div>
       <div style="font-weight:800;font-size:1.15rem">${esc(me.name)}</div>
       <div class="tiny muted">${closed ? "El torneo ya arrancó: seguí tu avance en vivo." : "Al llegar, hacé check-in con el organizador."}</div>
-      <a class="btn p" href="#/t/${t.id}">Ver mi situación y el bracket</a>
+      <div class="tiny muted">Tu código de jugador: <b style="color:var(--txt)">${esc(pcode(t, me))}</b>. Guardá este link para volver desde otro celular.</div>
+      <div class="row">
+        <a class="btn p" href="#/t/${t.id}">Ver mi situación y el bracket</a>
+        <button class="btn sm g" data-act="myqr" data-id="${me.id}">Mi link y QR</button>
+      </div>
     </div>` : closed ? `<div class="card">El registro ya cerró. Mirá el bracket en vivo en <a href="#/t/${t.id}/watch">este link</a>.</div>` : `
     <form class="card grid" data-form="reg" style="gap:.7rem">
-      <div class="field"><span class="tiny muted">Nombre</span><input name="name" required maxlength="24" autocomplete="nickname" placeholder="Tu nombre"></div>
-      ${rf.nick ? `<div class="field"><span class="tiny muted">Nick (opcional)</span><input name="nick" maxlength="18" placeholder="Tu nick"></div>` : ""}
+      <div class="field"><span class="tiny muted">Nombre o nick</span><input name="name" required maxlength="24" autocomplete="nickname" placeholder="Tu nombre o nick" autocapitalize="words"></div>
       ${rf.char ? (t.chars && t.chars.length
         ? `<div class="field"><span class="tiny muted">Personaje</span><select name="char"><option value="">Elegí…</option>${t.chars.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>`
         : `<div class="field"><span class="tiny muted">Personaje (opcional)</span><input name="char" maxlength="18" placeholder="Con quién jugás"></div>`) : ""}
       ${rf.level ? `<div class="field"><span class="tiny muted">Nivel (opcional)</span>
         <select name="level"><option value="">Sin definir</option><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></div>` : ""}
       <button class="btn p" type="submit">Confirmar inscripción</button>
-      <div class="tiny muted">Al llegar al evento tenés que hacer check-in con el organizador.</div>
+      <div class="tiny muted">Al confirmar se crea tu cuenta de jugador para ver tu lugar, tus partidas y el bracket desde cualquier celular.</div>
     </form>`}
-    <div class="card" style="padding:.2rem">
-      <table><thead><tr><th>Jugador</th><th>Personaje</th></tr></thead><tbody>${regRows(t)}</tbody></table>
-    </div>
+    ${regTable(t)}
     <a class="tiny muted" href="#/t/${t.id}/watch">Ver bracket →</a>
   </div>`;
 }
 
 function regFields(t) {
   const r = t.regFields || {};
-  return { nick: !!r.nick, char: r.char !== false, level: !!r.level };
+  return { char: r.char !== false, level: !!r.level };
+}
+
+function regTable(t) {
+  const rf = regFields(t);
+  const heads = ["Jugador"].concat(rf.char ? ["Personaje"] : []).concat(rf.level ? ["Nivel"] : []);
+  const rows = t.players.slice().reverse().slice(0, 20).map(p => {
+    const cells = [`<td>${esc(p.name)}${p.retired ? ` <span class="badge warn">Retirado</span>` : ""}</td>`];
+    if (rf.char) cells.push(`<td class="tiny muted">${esc(p.char || "—")}</td>`);
+    if (rf.level) cells.push(`<td class="tiny muted">${esc(p.level || "—")}</td>`);
+    return `<tr>${cells.join("")}</tr>`;
+  }).join("");
+  return `<div class="card" style="padding:.2rem;margin-top:.9rem"><div style="overflow-x:auto"><table>
+    <thead><tr>${heads.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows || `<tr><td colspan="${heads.length}" class="muted tiny" style="padding:.9rem">Sé el primero en anotarte.</td></tr>`}</tbody>
+  </table></div></div>`;
 }
 
 function regRows(t) {
-  const rows = t.players.slice().reverse().slice(0, 12)
-    .map(p => `<tr><td>${esc(p.name)}${p.nick ? ` <span class="muted tiny">@${esc(p.nick)}</span>` : ""}</td><td class="tiny muted">${esc([p.char, p.level].filter(Boolean).join(" · ") || "—")}</td></tr>`).join("");
-  return rows || `<tr><td colspan="2" class="muted tiny" style="padding:.9rem">Sé el primero en anotarte.</td></tr>`;
+  const rf = regFields(t);
+  return t.players.slice().reverse().slice(0, 12).map(p => {
+    const cells = [`<td>${esc(p.name)}</td>`];
+    if (rf.char) cells.push(`<td class="tiny muted">${esc(p.char || "—")}</td>`);
+    if (rf.level) cells.push(`<td class="tiny muted">${esc(p.level || "—")}</td>`);
+    return `<tr>${cells.join("")}</tr>`;
+  }).join("") || `<tr><td colspan="${1 + (rf.char ? 1 : 0) + (rf.level ? 1 : 0)}" class="muted tiny" style="padding:.9rem">Sé el primero en anotarte.</td></tr>`;
 }
 
 function renderWatch(t) {
@@ -3901,7 +4404,7 @@ function renderWatch(t) {
   ${ph === "reg" ? `<div class="card grid" style="gap:.5rem"><div class="tiny muted">Las llaves se publican cuando arranca el torneo.</div>
     <a class="btn sm p" href="#/t/${t.id}/reg" style="align-self:flex-start">Inscribirme</a></div>`
     : heat ? tabHeat(t, false, H, true)
-    : `<div class="bracket">${watchCols(t, B).map(c => `<div class="round"><h4>${c.title}</h4><div class="ms">${c.ids.map(id => matchCard(t, B, B.matches[id], true)).join("")}</div></div>`).join("")}</div>`}
+    : bracketView(t, B, false)}
   <div class="row tiny muted" style="margin-top:1rem;gap:1rem">
     <a href="#/t/${t.id}">Inicio del torneo</a>
     ${me ? `<a href="#/t/${t.id}">Mi situación</a>` : ""}
@@ -4083,6 +4586,82 @@ document.addEventListener("click", (e) => {
   if (act === "settings") return go("#/settings");
   if (act === "copy") return copy(el.dataset.link);
   if (act === "tab") { S.ui.tab = el.dataset.tab; render(); return; }
+  if (act === "bview") { S.ui.bview = el.dataset.view || "all"; render(); return; }
+  if (act === "quickperson") {
+    const f = document.querySelector("[data-form='addp']");
+    const inp = f && f.querySelector("[name='name']");
+    if (inp) { inp.value = el.dataset.name || ""; inp.focus(); }
+    return;
+  }
+  if (act === "account") { if (t) openAccount(t); return; }
+  if (act === "gotogate") { if (t) go("#/t/" + t.id + "/admin"); return; }
+  if (act === "logout") {
+    if (!t) return;
+    const role = roleOf(t);
+    if (role === "admin") delete S.owners[t.id];
+    if (role === "judge") { if (S.judge) delete S.judge[t.id]; S.ui.judge = null; S.ui.judgeT = null; }
+    if (role === "player" && S.me) delete S.me[t.id];
+    saveDB(); closeModal(); render(); toast("Sesión cerrada");
+    return;
+  }
+  if (act === "myqr") {
+    if (!t) return;
+    const p = playerOf(t, el.dataset.id);
+    if (p) openPlayerQR(t, p);
+    return;
+  }
+  if (act === "retire") {
+    if (!t) return;
+    const p = playerOf(t, el.dataset.id);
+    if (!p) return;
+    if (!p.retired) {
+      if (!confirm(`¿Marcar a ${p.name} como retirado? Sus partidas pendientes se dan por perdidas.`)) return;
+      p.retired = true;
+      if (t.phase === "reg") p.in = false;
+    } else {
+      p.retired = false;
+      if (t.phase === "reg") p.in = true;
+    }
+    settle(t); touch(t); closeModal(); render();
+    toast(p.retired ? p.name + " queda retirado" : p.name + " vuelve a competir");
+    return;
+  }
+  if (act === "call") {
+    if (!t) return;
+    const p = playerOf(t, el.dataset.id);
+    if (p) { callPlayer(t, p.id, el.dataset.match || null); render(); }
+    return;
+  }
+  if (act === "callmatch") {
+    if (!t) return;
+    const id = el.dataset.id;
+    if (t.mode === "heat") {
+      const m = computeHeat(t).all[id];
+      if (m) m.players.forEach(pid => callPlayer(t, pid, id));
+    } else {
+      const m = computeBracket(t).B.matches[id];
+      if (m) [m.a, m.b].filter(x => x && x !== BYE).forEach(pid => callPlayer(t, pid, id));
+    }
+    render();
+    return;
+  }
+  if (act === "dismisscall") {
+    if (!t) return;
+    const pid = el.dataset.id, at = +(el.dataset.at || 0);
+    S.callsSeen = S.callsSeen || {};
+    S.callsSeen[t.id] = S.callsSeen[t.id] || {};
+    S.callsSeen[t.id][pid] = at;
+    saveDB(); render();
+    return;
+  }
+  if (act === "notif") {
+    if (!("Notification" in window)) return toast("Este navegador no soporta avisos");
+    Notification.requestPermission().then(p => {
+      toast(p === "granted" ? "Avisos activados" : "Avisos bloqueados");
+      render();
+    });
+    return;
+  }
   if (act === "export") {
     const blob = new Blob([JSON.stringify({ t: S.t }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
@@ -4180,7 +4759,7 @@ document.addEventListener("click", (e) => {
   if (act === "autoseed") { seedApply(t, false); return; }
   if (act === "shuffleseed") { seedApply(t, true); return; }
   if (act === "delp") {
-    if (t.phase !== "reg" && !confirm("El torneo está en curso. Se saca de la lista; después tocá «Rearmar llaves» para actualizar la llave. ¿Seguir?")) return;
+    if (t.phase !== "reg" && !confirm("El torneo está en curso. Se saca de la lista; después " + (roleOf(t) === "admin" ? "tocá «Rearmar llaves»" : "pedile al organizador que rearme las llaves") + " para actualizar la llave. ¿Seguir?")) return;
     t.players = t.players.filter(p => p.id !== el.dataset.id); touch(t); render(); return;
   }
   if (act === "deljudge") {
@@ -4309,6 +4888,15 @@ document.addEventListener("submit", (e) => {
   const d = new FormData(f);
   const kind = f.dataset.form;
 
+  if (kind === "playercode") {
+    const r = route(); const t = r.t; if (!t) return;
+    const p = playerByCode(t, d.get("code"));
+    if (!p) return toast("Código no encontrado");
+    S.me = S.me || {}; S.me[t.id] = p.id;
+    saveDB(); closeModal(); go("#/t/" + t.id); render();
+    toast("Hola, " + p.name);
+    return;
+  }
   if (kind === "create") {
     const pass = String(d.get("adminPass") || "").trim();
     if (pass.length < 4) return toast("La contraseña de organizador necesita al menos 4 caracteres");
@@ -4318,7 +4906,7 @@ document.addEventListener("submit", (e) => {
       pools: d.get("pools"), advance: d.get("advance"),
       mode: d.get("mode"), perMatch: d.get("perMatch"), advW: d.get("advW"), advL: d.get("advL"),
       judges: d.get("judges"), adminPass: pass,
-      regNick: !!d.get("regNick"), regChar: !!d.get("regChar"), regLevel: !!d.get("regLevel"),
+      regChar: !!d.get("regChar"), regLevel: !!d.get("regLevel"),
     });
     touch(t);
     go("#/t/" + t.id);
@@ -4346,7 +4934,7 @@ document.addEventListener("submit", (e) => {
     }
     t.bestOf = +d.get("bestOf") || 3;
     t.mode = mode; t.perMatch = perMatch; t.advW = advW; t.advL = advL; t.format = format;
-    t.regFields = { nick: !!d.get("regNick"), char: !!d.get("regChar"), level: !!d.get("regLevel") };
+    t.regFields = { char: !!d.get("regChar"), level: !!d.get("regLevel") };
     if (mode === "heat") { t.poolCount = 0; t.pools = null; t.qualified = null; }
     if (t.phase !== "reg" && t.phase !== "pools") settle(t);
     touch(t); closeModal(); render(); toast("Torneo actualizado");
@@ -4359,46 +4947,69 @@ document.addEventListener("submit", (e) => {
     const pid = uid("p");
     t.players.push({
       id: pid, name,
-      nick: rf.nick ? String(d.get("nick") || "").trim().slice(0, 18) : "",
       char: rf.char ? String(d.get("char") || "").trim() : "",
       level: rf.level ? String(d.get("level") || "").trim() : "",
+      token: uid("u") + uid("u"),
+      code: (t.id.slice(-2) + pid.slice(-3)).toUpperCase(),
       seed: t.players.length + 1, in: false, createdAt: now(),
     });
     S.me = S.me || {}; S.me[t.id] = pid;
+    rememberPerson(name);
     touch(t);
-    f.innerHTML = `<div class="grid" style="gap:.4rem;text-align:center;padding:1rem 0">
-      <div style="font-size:1.6rem">✅</div><b>Estás dentro, ${esc(name)}</b>
-      <div class="tiny muted">Hacé check-in con el organizador al llegar.</div>
-      <div class="row" style="justify-content:center"><a class="btn sm p" href="#/t/${t.id}">Ver mi situación</a><a class="btn sm g" href="#/t/${t.id}/watch">Ver bracket</a></div></div>`;
-    const cnt = $("#app .badge.ok"), tb = $("#app tbody");
-    if (cnt) cnt.textContent = t.players.length + " inscriptos";
-    if (tb) tb.innerHTML = regRows(t);
-    toast("Inscripción confirmada");
+    render();
+    toast("Inscripción confirmada · guardá tu link o código");
     return;
   }
   if (kind === "addp") {
     const name = String(d.get("name") || "").trim(); if (!name) return;
+    const pid = uid("p");
     t.players.push({
-      id: uid("p"), name,
-      nick: String(d.get("nick") || "").trim().slice(0, 18),
+      id: pid, name,
       char: String(d.get("char") || "").trim(),
+      token: uid("u") + uid("u"),
+      code: (t.id.slice(-2) + pid.slice(-3)).toUpperCase(),
       seed: t.players.length + 1, in: true, createdAt: now(),
     });
+    rememberPerson(name);
     touch(t); render(); return;
+  }
+  if (kind === "addmany") {
+    const names = String(d.get("names") || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    if (!names.length) return;
+    names.forEach(raw => {
+      const name = raw.slice(0, 24);
+      const pid = uid("p");
+      t.players.push({
+        id: pid, name, char: "",
+        token: uid("u") + uid("u"),
+        code: (t.id.slice(-2) + pid.slice(-3)).toUpperCase(),
+        seed: t.players.length + 1, in: true, createdAt: now(),
+      });
+      rememberPerson(name);
+    });
+    touch(t); render();
+    toast(names.length + (names.length === 1 ? " jugador agregado" : " jugadores agregados"));
+    return;
   }
   if (kind === "addjudge") {
     const name = String(d.get("name") || "").trim(); if (!name) return;
     t.judges = t.judges || [];
-    t.judges.push({ id: uid("j"), name, pin: String(Math.floor(1000 + Math.random() * 9000)), token: uid("k") + uid("k") });
-    touch(t); render(); return;
+    const j = { id: uid("j"), name, pin: String(Math.floor(1000 + Math.random() * 9000)), token: uid("k") + uid("k") };
+    t.judges.push(j);
+    touch(t); render();
+    openJudgeQR(t, j);
+    return;
   }
   if (kind === "addjudgep") {
     const p = t.players.find(x => x.id === d.get("pid"));
     if (!p) return;
     t.judges = t.judges || [];
     if (t.judges.some(j => j.name === p.name)) return toast("Ya es juez");
-    t.judges.push({ id: uid("j"), name: p.name, pin: String(Math.floor(1000 + Math.random() * 9000)), token: uid("k") + uid("k") });
-    touch(t); render(); toast(p.name + " ahora es juez"); return;
+    const j = { id: uid("j"), name: p.name, pin: String(Math.floor(1000 + Math.random() * 9000)), token: uid("k") + uid("k") };
+    t.judges.push(j);
+    touch(t); render();
+    openJudgeQR(t, j);
+    return;
   }
   if (kind === "chars") {
     t.chars = String(d.get("chars") || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean);
@@ -4440,6 +5051,13 @@ function openMatch(t, id) {
   const feedTxt = feeders.map(f => matchLabel(f)).join(" y ");
   const nextW = m.nextWin && B.matches[m.nextWin[0]] ? matchLabel(B.matches[m.nextWin[0]]) : null;
   const nextL = m.nextLose && B.matches[m.nextLose[0]] ? matchLabel(B.matches[m.nextLose[0]]) : null;
+  const gf0 = m.id === "GF-0" && t.format === "double";
+  const gf1 = m.id === "GF-1";
+  const note = gf0
+    ? "Gana quien tenga más sets. Si gana el retador (el que viene de la llave de perdedores), se juega una final extra. Si gana el de ganadores, se consagra campeón."
+    : gf1
+      ? "Final extra: el ganador se lleva el torneo."
+      : `Gana quien tenga más sets.${nextW ? ` El ganador pasa a ${esc(nextW)}.` : " El ganador es el campeón."}${nextL ? ` El perdedor baja a ${esc(nextL)}.` : " El perdedor queda eliminado."}`;
   $("#modal").innerHTML = `
   <div class="modal">
     <div class="box" data-stop>
@@ -4456,7 +5074,7 @@ function openMatch(t, id) {
             <div><b>${esc(nm(p))}</b><div class="tiny muted">${esc(p && p !== BYE ? pidChar(t, p) : "")}</div></div>
             <input type="number" min="0" max="9" value="${m.done ? sc : ""}" data-score="${k}" style="width:64px;text-align:center" ${locked ? "disabled" : ""}>
           </div>`).join("")}
-        <div class="tiny muted">Gana quien tenga más sets.${nextW ? ` El ganador pasa a ${esc(nextW)}.` : " El ganador es el campeón."}${nextL ? ` El perdedor baja a ${esc(nextL)}.` : " El perdedor queda eliminado."}</div>
+        <div class="tiny muted">${note}</div>
         <div class="row">
           <button class="btn p" data-act="save" data-id="${id}" ${locked ? "disabled" : ""}>Guardar resultado</button>
           <button class="btn g" data-act="stream" data-id="${id}">📺 ${t.stream === id ? "Quitar del stream" : "Al stream"}</button>
@@ -4550,7 +5168,6 @@ function openEdit(t) {
         </div>
         <div class="field"><span class="tiny muted">Qué pedir al inscribirse (además del nombre)</span>
           <div class="row" style="gap:1.2rem;flex-wrap:wrap;margin-top:.35rem">
-            <label class="row tiny" style="gap:.35rem;cursor:pointer"><input type="checkbox" name="regNick"${rf.nick ? " checked" : ""}> Nick</label>
             <label class="row tiny" style="gap:.35rem;cursor:pointer"><input type="checkbox" name="regChar"${rf.char ? " checked" : ""}> Personaje</label>
             <label class="row tiny" style="gap:.35rem;cursor:pointer"><input type="checkbox" name="regLevel"${rf.level ? " checked" : ""}> Nivel</label>
           </div>
@@ -4793,6 +5410,117 @@ function runTests() {
     ok(!H.champ, "heat: declaró campeón antes de la gran final");
     ok(heatPending(H).length > 0, "heat: no quedan partidas pendientes de perdedores");
     out.push("heat gran final → campeón solo al final: " + (H.champ ? "FALLA" : "OK"));
+  }
+
+  // ---- reparto de partidas: primero llenas, la última más chica ----
+  {
+    const cases = [
+      { n: 14, K: 4, want: [4, 4, 4, 2] },
+      { n: 13, K: 4, want: [4, 4, 4, 1] },
+      { n: 10, K: 4, want: [4, 4, 2] },
+      { n: 9, K: 4, want: [4, 4, 1] },
+      { n: 8, K: 4, want: [4, 4] },
+      { n: 6, K: 4, want: [4, 2] },
+      { n: 5, K: 4, want: [4, 1] },
+      { n: 3, K: 4, want: [3] },
+    ];
+    let bad = 0;
+    for (const c of cases) {
+      const ids = Array.from({ length: c.n }, (_, i) => "x" + i);
+      const got = heatChunks(ids, c.K).map(g => g.length);
+      if (JSON.stringify(got) !== JSON.stringify(c.want)) {
+        bad++;
+        ok(false, `heatChunks ${c.n}/${c.K}: ${got.join(",")} != ${c.want.join(",")}`);
+      }
+    }
+    if (!bad) { pass += cases.length; out.push("heatChunks tamaños → OK (4,4,4,2 / 4,4,4,1 / 4,4,2…)"); }
+  }
+
+  // ---- perdedores en paralelo ----
+  {
+    const t = {
+      id: "hp", mode: "heat", perMatch: 4, advW: 2, advL: 1, format: "double",
+      players: [], orders: {}, chars: [], judges: [], results: {}, phase: "running",
+    };
+    for (let i = 0; i < 12; i++) t.players.push({ id: "hp" + i, name: "HP" + i, seed: i + 1, in: true, createdAt: i });
+    let H = computeHeat(t);
+    const w0 = H.W[0].matches;
+    if (w0[0]) t.orders[w0[0].id] = w0[0].players.slice();
+    if (w0[1]) t.orders[w0[1].id] = w0[1].players.slice();
+    H = computeHeat(t);
+    ok(H.L.length > 0 && H.L[0].matches.length > 0, "perdedores no se armó en paralelo con ganadores");
+    out.push("perdedores en paralelo → " + (H.L.length ? "OK" : "FALLA"));
+  }
+
+  // ---- el que baja mientras la ronda de perdedores está pendiente sigue vivo ----
+  {
+    const t = {
+      id: "hw", mode: "heat", perMatch: 4, advW: 2, advL: 1, format: "double",
+      players: [], orders: {}, chars: [], judges: [], results: {}, phase: "running",
+    };
+    for (let i = 0; i < 12; i++) t.players.push({ id: "hw" + i, name: "HW" + i, seed: i + 1, in: true, createdAt: i });
+    let H = computeHeat(t);
+    H.W[0].matches.forEach(m => { t.orders[m.id] = m.players.slice(); });
+    H = computeHeat(t);
+    const w1 = H.W[1] && H.W[1].matches[0];
+    ok(!!w1, "espera perdedores: no se armó la segunda ronda de ganadores");
+    if (w1) {
+      const dropPid = w1.players[2];
+      t.orders[w1.id] = w1.players.slice();
+      H = computeHeat(t);
+      ok((H.waiting || []).indexOf(dropPid) >= 0, "espera perdedores: el que baja no quedó esperando");
+      ok(aliveOf(t, dropPid, null, H), "espera perdedores: el que espera figura eliminado");
+      const my = myStatus(t, dropPid, null, H);
+      ok(!my.eliminated && my.waitingL, "espera perdedores: estado del jugador incorrecto");
+      out.push("jugador esperando perdedores → " + (my.waitingL && !my.eliminated ? "OK" : "FALLA"));
+    }
+  }
+
+  // ---- retirado en duelo: la partida pendiente se resuelve sola ----
+  {
+    const t = { id: "rd", format: "double", size: 8, bestOf: 3, results: {}, players: [], chars: [], judges: [] };
+    for (let i = 0; i < 8; i++) t.players.push({ id: "rd" + i, name: "RD" + i, seed: i + 1, in: true, createdAt: i });
+    let { B } = computeBracket(t);
+    const m0 = playable(B)[0];
+    const pid = m0.a, opp = m0.b;
+    t.players.find(x => x.id === pid).retired = true;
+    let r = computeBracket(t);
+    const mm = r.B.matches[m0.id];
+    ok(mm && mm.done && mm.winPid === opp, "retiro duelo: no ganó el rival");
+    let guard = 0;
+    while (guard++ < 500) {
+      const pend = playable(r.B);
+      if (!pend.length) break;
+      pend.forEach(x => { t.results[x.id] = [3, 0]; });
+      r = computeBracket(t);
+    }
+    ok(!!r.champ, "retiro duelo: sin campeón");
+    out.push("retiro duelo → " + (r.champ ? "campeón sí" : "campeón no"));
+  }
+
+  // ---- retirado en modo fiesta: sale de la partida y el torneo termina ----
+  {
+    const t = {
+      id: "rh", mode: "heat", perMatch: 4, advW: 2, advL: 1, format: "double",
+      players: [], orders: {}, chars: [], judges: [], results: {}, phase: "running",
+    };
+    for (let i = 0; i < 12; i++) t.players.push({ id: "rh" + i, name: "RH" + i, seed: i + 1, in: true, createdAt: i });
+    let H = computeHeat(t);
+    const m0 = heatPending(H)[0];
+    const pid = m0.players[0];
+    t.players.find(x => x.id === pid).retired = true;
+    H = computeHeat(t);
+    const nm = H.all[m0.id];
+    ok(nm && nm.players.indexOf(pid) < 0, "retiro fiesta: el retirado sigue en la partida");
+    let guard = 0;
+    while (guard++ < 500) {
+      const pend = heatPending(H);
+      if (!pend.length) break;
+      pend.forEach(x => { t.orders[x.id] = x.players.slice().reverse(); });
+      H = computeHeat(t);
+    }
+    ok(!!H.champ, "retiro fiesta: sin campeón");
+    out.push("retiro fiesta → " + (H.champ ? "campeón sí" : "campeón no"));
   }
 
   out.push("");
